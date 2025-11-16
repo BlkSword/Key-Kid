@@ -53,19 +53,6 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 }
 ```
 
-使用 `uv` 管理的项目可改为：
-
-```json
-{
-  "mcpServers": {
-    "CTF Crypto": {
-      "command": "uv",
-      "args": ["run", "mcp", "run", "d:/project/Key-Kid/src/server.py"],
-      "env": {}
-    }
-  }
-}
-```
 
 ### Streamable HTTP 客户端配置
 若以 HTTP 方式提供服务（参考 `d:\project\Key-Kid\MCP-README.md` 的 Streamable HTTP 章节），客户端可使用如下 JSON 指定服务器地址：
