@@ -10,7 +10,7 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 - 结构化输出、可用于自动化 agent 流程
 
 ## 安装
-- 安装 MCP Python SDK（参考 `d:\project\Key-Kid\MCP-README.md`）：
+- 安装 MCP Python SDK
   - `pip install "mcp[cli]"`
 
 ## 运行
@@ -31,9 +31,15 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 - `tool_xor_single_break(data, encoding, top_k)`：单字节 XOR 破解
 - `tool_xor_repeating_break(data, encoding, min_key, max_key)`：重复密钥 XOR 破解
 - `tool_rc4_decrypt(ciphertext, cipher_encoding, key?, key_encoding)`：RC4 解密（缺参时交互征询）
+- `tool_factor_integer(n, prefer_yafu, timeout)`：整数因式分解，优先尝试本机 `yafu`，否则自动回退到内置算法
+- `tool_hash_identify(text)`：依据长度/字符集识别常见哈希类型
+- `tool_aes_decrypt(ciphertext, cipher_encoding, key?, key_encoding, iv?, iv_encoding, mode)`：AES 解密（ECB/CBC），依赖 `pycryptodome` 或 `cryptography`，缺参时交互征询
+- `tool_des_decrypt(ciphertext, cipher_encoding, key?, key_encoding, iv?, iv_encoding, mode)`：DES 解密（ECB/CBC），依赖同上
+- `tool_rot_all_wordlist(text, top_k, wordlist_name)`：结合词表与英文评分挑选更佳候选
 
 ## 样例资源/提示
 - `samples://{id}`：如 `rot13_hello`、`xor_single_hex`
+- `wordlist://{name}`：常用词表，如 `common` 与 `ctf`
 - Prompt：`AnalyzeCiphertext` 引导调用顺序与策略
 
 ## 手动接入 JSON 示例（参考 MCP-README）
@@ -46,8 +52,12 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
   "mcpServers": {
     "CTF Crypto": {
       "command": "python",
-      "args": ["d:/project/Key-Kid/src/server.py"],
-      "env": {}
+      "args": [
+        "d:/Key-Kid/src/server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "d:/Key-Kid"
+      }
     }
   }
 }
@@ -55,7 +65,7 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 
 
 ### Streamable HTTP 客户端配置
-若以 HTTP 方式提供服务（参考 `d:\project\Key-Kid\MCP-README.md` 的 Streamable HTTP 章节），客户端可使用如下 JSON 指定服务器地址：
+若以 HTTP 方式提供服务（参考 `d:\Key-Kid\MCP-README.md` 的 Streamable HTTP 章节），客户端可使用如下 JSON 指定服务器地址：
 
 ```json
 {
@@ -75,8 +85,13 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 ```
 
 ## 自检
-- `python scripts/selftest.py` 查看基础功能输出
+- `python scripts/selftest.py` 查看基础功能输出（包含因式分解示例）
+
+## yafu 集成
+- 若系统已安装 `yafu` 或 `yafu.exe` 并处于 `PATH`，`tool_factor_integer` 将自动调用以提升大整数分解效率
+- 无 `yafu` 时自动回退到内置 Pollard Rho + Miller-Rabin + 试除组合
 
 ## 注意
 - 大规模枚举任务已做限制；必要时请提供更多线索以缩小搜索空间
 - RC4/AES 等现代密码需提供密钥等参数；AES 计划在后续版本引入
+- AES/DES 工具需安装 `pycryptodome` 或 `cryptography`，否则返回空结果；请根据环境选择安装其一

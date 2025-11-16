@@ -10,3 +10,7 @@ class BreakResult(BaseModel):
     plaintext: str
     key: str | None = None
     confidence: float = Field(ge=0, le=1)
+
+class FactorResult(BaseModel):
+    n: str
+    factors: list[str]
