@@ -51,6 +51,20 @@ def _try_decode_unicode_escape(s: str) -> str | None:
     except Exception:
         return None
 
+def _try_decode_binary(s: str) -> str | None:
+    """Try to decode binary string (e.g., '0100100001100101...')"""
+    s_clean = s.replace(" ", "").replace("\n", "")
+    if not s_clean or len(s_clean) % 8 != 0:
+        return None
+    if not all(c in "01" for c in s_clean):
+        return None
+    try:
+        # Split into 8-bit chunks
+        bytes_list = [int(s_clean[i:i+8], 2) for i in range(0, len(s_clean), 8)]
+        return bytes(bytes_list).decode(errors="ignore")
+    except Exception:
+        return None
+
 DECODERS = [
     ("base64", _try_decode_base64),
     ("base32", _try_decode_base32),
@@ -59,6 +73,7 @@ DECODERS = [
     ("hex", _try_decode_hex),
     ("url", _try_decode_url),
     ("unicode_escape", _try_decode_unicode_escape),
+    ("binary", _try_decode_binary),
 ]
 
 def detect_encoding(text: str, top_k: int = 5) -> List[DetectionCandidate]:

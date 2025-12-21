@@ -1,0 +1,6 @@
+mcp[cli]>=0.1.0
+pydantic>=2.0.0
+# Optional but recommended for block ciphers
+pycryptodome>=3.10.0
+# Alternative to pycryptodome
+# cryptography>=41.0.0

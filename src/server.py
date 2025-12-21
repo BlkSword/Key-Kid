@@ -1,5 +1,17 @@
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import anyio as _anyio
+
+class _GenericFunc:
+    def __init__(self, fn):
+        self.fn = fn
+    def __call__(self, *args, **kwargs):
+        return self.fn(*args, **kwargs)
+    def __getitem__(self, item):
+        return self.fn
+
+if not hasattr(_anyio.create_memory_object_stream, "__getitem__"):
+    _anyio.create_memory_object_stream = _GenericFunc(_anyio.create_memory_object_stream)
 from mcp.server.fastmcp import FastMCP, Context
 from mcp.server.session import ServerSession
 from src.tools.models import BreakResult, DetectionCandidate
@@ -157,7 +169,7 @@ async def tool_rc4_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: s
 
 @mcp.tool()
 async def tool_factor_integer(n: str, prefer_yafu: bool = True, timeout: int = 10, ctx: Context[ServerSession, None] | None = None) -> dict:
-    """Factor large integers. Prefer local `yafu` if available, otherwise fall back to built-in methods.
+    r"""Factor large integers. Prefer local `yafu` if available, otherwise fall back to built-in methods.
 
     Purpose: Factor composites commonly encountered in CTF (e.g., testing RSA moduli).
     Usage: `n` can be decimal or a string with base prefix (e.g., `0x..`);
