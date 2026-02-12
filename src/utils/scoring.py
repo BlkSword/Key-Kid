@@ -1,7 +1,6 @@
 from functools import lru_cache
 import re
 
-
 LETTER_FREQ = {
     "a": 0.08167,
     "b": 0.01492,
