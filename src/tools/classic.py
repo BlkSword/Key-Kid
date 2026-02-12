@@ -14,11 +14,12 @@ def _shift_char(c: str, k: int) -> str:
     return c
 
 def caesar_break(ciphertext: str) -> BreakResult:
-    best = None
+    # Initialize with worst case
+    best = BreakResult(algorithm="Caesar", plaintext="", key="0", confidence=0.0)
     for k in range(26):
         pt = ''.join(_shift_char(c, k) for c in ciphertext)
         sc = english_score(pt)
-        if best is None or sc > best.confidence:
+        if sc > best.confidence:
             best = BreakResult(algorithm="Caesar", plaintext=pt, key=str(k), confidence=sc)
     return best
 
@@ -33,7 +34,7 @@ def vigenere_break(ciphertext: str, max_key_len: int = 16, top_k: int = 3) -> li
                 if ch.isalpha():
                     if j % klen == i:
                         column.append(ch)
-            best_s = 0
+            best_s = 0.0
             best_k = 0
             for k in range(26):
                 pt = ''.join(_shift_char(c, k) for c in column)
@@ -105,7 +106,7 @@ def _rail_pattern(n: int, rails: int) -> list[int]:
 def rail_fence_decrypt(ciphertext: str, rails: int) -> str:
     n = len(ciphertext)
     pat = _rail_pattern(n, rails)
-    positions = [[] for _ in range(rails)]
+    positions: list[list[int]] = [[] for _ in range(rails)]
     for i, r in enumerate(pat):
         positions[r].append(i)
     res = [''] * n

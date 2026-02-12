@@ -105,7 +105,7 @@ def english_score(s: str) -> float:
     return min(1.0, total)
 
 def ioc(s: str) -> float:
-    freq = {}
+    freq: dict[str, int] = {}
     for ch in s:
         if ch.isalpha():
             c = ch.lower()
@@ -115,7 +115,7 @@ def ioc(s: str) -> float:
         return 0.0
     num = sum(v * (v - 1) for v in freq.values())
     den = n * (n - 1)
-    return num / den
+    return float(num) / float(den)
 
 def hamming_distance(a: bytes, b: bytes) -> int:
     x = bytes(x ^ y for x, y in zip(a, b, strict=True))

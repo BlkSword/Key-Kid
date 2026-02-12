@@ -36,7 +36,9 @@ def _aes_pycrypto(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     if m == "ECB":
         cipher = PYCAES.new(key, PYCAES.MODE_ECB)
     elif m == "CBC":
-        cipher = PYCAES.new(key, PYCAES.MODE_CBC, iv)
+        if iv is None:
+            raise ValueError("IV is required for CBC mode")
+        cipher = PYCAES.new(key, PYCAES.MODE_CBC, iv)  # type: ignore[assignment]
     else:
         raise ValueError("Unsupported AES mode")
     pt = cipher.decrypt(ct)
@@ -47,6 +49,8 @@ def _des_pycrypto(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     if m == "ECB":
         cipher = PYCDES.new(key, PYCDES.MODE_ECB)
     elif m == "CBC":
+        if iv is None:
+            raise ValueError("IV is required for CBC mode")
         cipher = PYCDES.new(key, PYCDES.MODE_CBC, iv)
     else:
         raise ValueError("Unsupported DES mode")
@@ -56,31 +60,36 @@ def _des_pycrypto(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
 def _aes_cryptography(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     m = mode.upper()
     if m == "ECB":
-        cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+        cipher_obj = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
     elif m == "CBC":
-        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        if iv is None:
+            raise ValueError("IV is required for CBC mode")
+        cipher_obj = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())  # type: ignore[arg-type]
     else:
         raise ValueError("Unsupported AES mode")
-    decryptor = cipher.decryptor()
+    decryptor = cipher_obj.decryptor()
     pt = decryptor.update(ct) + decryptor.finalize()
     return _pkcs7_unpad(pt)
 
 def _des_cryptography(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     m = mode.upper()
     if m == "ECB":
-        cipher = Cipher(algorithms.DES(key), modes.ECB(), backend=default_backend())
+        # Use TripleDES for backward compatibility
+        cipher_obj = Cipher(algorithms.TripleDES(key), modes.ECB(), backend=default_backend())
     elif m == "CBC":
-        cipher = Cipher(algorithms.DES(key), modes.CBC(iv), backend=default_backend())
+        if iv is None:
+            raise ValueError("IV is required for CBC mode")
+        cipher_obj = Cipher(algorithms.TripleDES(key), modes.CBC(iv), backend=default_backend())  # type: ignore[arg-type]
     else:
         raise ValueError("Unsupported DES mode")
-    decryptor = cipher.decryptor()
+    decryptor = cipher_obj.decryptor()
     pt = decryptor.update(ct) + decryptor.finalize()
     return _pkcs7_unpad(pt)
 
 async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "hex", iv: str | None = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
     ct = _parse(ciphertext, cipher_encoding)
     if key is None:
-        if ctx is not None:
+        if ctx is not None and hasattr(ctx, "elicit"):
             from pydantic import BaseModel
             class AESParams(BaseModel):
                 key: str
@@ -88,7 +97,7 @@ async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | 
                 iv: str | None = None
                 iv_encoding: str = "hex"
                 mode: str = "CBC"
-            res = await ctx.elicit("需要 AES 解密参数", AESParams)
+            res = await ctx.elicit("需要 AES 解密参数", AESParams)  # type: ignore[attr-defined]
             if res.action == "accept" and res.data:
                 key = res.data.key
                 key_encoding = res.data.key_encoding
@@ -112,7 +121,7 @@ async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | 
 async def des_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "hex", iv: str | None = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
     ct = _parse(ciphertext, cipher_encoding)
     if key is None:
-        if ctx is not None:
+        if ctx is not None and hasattr(ctx, "elicit"):
             from pydantic import BaseModel
             class DESParams(BaseModel):
                 key: str
@@ -120,7 +129,7 @@ async def des_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | 
                 iv: str | None = None
                 iv_encoding: str = "hex"
                 mode: str = "CBC"
-            res = await ctx.elicit("需要 DES 解密参数", DESParams)
+            res = await ctx.elicit("需要 DES 解密参数", DESParams)  # type: ignore[attr-defined]
             if res.action == "accept" and res.data:
                 key = res.data.key
                 key_encoding = res.data.key_encoding

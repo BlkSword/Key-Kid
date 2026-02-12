@@ -34,8 +34,8 @@ class RC4Params(BaseModel):
 async def rc4_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "raw", ctx: object | None = None) -> str:
     c = _parse(ciphertext, cipher_encoding)
     if not key:
-        if ctx is not None:
-            res = await ctx.elicit("需要 RC4 密钥", RC4Params)
+        if ctx is not None and hasattr(ctx, "elicit"):
+            res = await ctx.elicit("需要 RC4 密钥", RC4Params)  # type: ignore[attr-defined]
             if res.action == "accept" and res.data:
                 key = res.data.key
                 key_encoding = res.data.key_encoding
@@ -43,6 +43,8 @@ async def rc4_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | 
                 return ""
         else:
             return ""
+    if key is None:
+        return ""
     k = _parse(key, key_encoding)
     pt = rc4(c, k)
     return pt.decode(errors="ignore")

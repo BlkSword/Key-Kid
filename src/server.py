@@ -14,7 +14,7 @@ class _GenericFunc:
         return self.fn
 
 if not hasattr(_anyio.create_memory_object_stream, "__getitem__"):
-    _anyio.create_memory_object_stream = _GenericFunc(_anyio.create_memory_object_stream)
+    _anyio.create_memory_object_stream = _GenericFunc(_anyio.create_memory_object_stream)  # type: ignore
 from mcp.server.fastmcp import Context, FastMCP  # noqa: E402
 from mcp.server.session import ServerSession  # noqa: E402
 
@@ -189,7 +189,7 @@ async def tool_rc4_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: s
     return await rc4_decrypt(ciphertext, cipher_encoding, key, key_encoding, ctx)
 
 @mcp.tool()
-async def tool_factor_integer(n: str, prefer_yafu: bool = True, timeout: int = 10, ctx: Context[ServerSession, None] | None = None) -> dict:
+async def tool_factor_integer(n: str, prefer_yafu: bool = True, timeout: int = 10, ctx: Context[ServerSession, None, None] | None = None) -> dict:
     r"""Factor large integers. Prefer local `yafu` if available, otherwise fall back to built-in methods.
 
     Purpose: Factor composites commonly encountered in CTF (e.g., testing RSA moduli).
@@ -204,7 +204,7 @@ async def tool_factor_integer(n: str, prefer_yafu: bool = True, timeout: int = 1
     try:
         parsed = int(n, 0)
     except Exception:
-        parsed = n
+        parsed = int(n)
     r = factor_integer(parsed, prefer_yafu, timeout)
     if ctx is not None:
         await ctx.report_progress(progress=1.0, total=1.0, message="Done")
@@ -245,7 +245,7 @@ async def tool_des_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: s
     return await des_decrypt(ciphertext, cipher_encoding, key, key_encoding, iv, iv_encoding, mode, ctx)
 
 @mcp.tool()
-async def tool_rot_all_wordlist(text: str, top_k: int = 3, wordlist_name: str = "common", ctx: Context[ServerSession, None] | None = None) -> list[BreakResult]:
+async def tool_rot_all_wordlist(text: str, top_k: int = 3, wordlist_name: str = "common", ctx: Context[ServerSession, None, None] | None = None) -> list[BreakResult]:
     """Enumerate ROT and rank by a weighted score combining English frequency and wordlist matches.
 
     Purpose: Improve ranking when English scoring alone is insufficient.
@@ -260,8 +260,9 @@ async def tool_rot_all_wordlist(text: str, top_k: int = 3, wordlist_name: str = 
         try:
             # res.contents[0] is TextContent in MCP client; here assume text payload
             from mcp.types import TextContent
-            if res.contents and isinstance(res.contents[0], TextContent):
-                words = [x.strip() for x in res.contents[0].text.splitlines() if x.strip()]
+            contents_list = list(res.contents) if hasattr(res, "contents") else []
+            if contents_list and isinstance(contents_list[0], TextContent):
+                words = [x.strip() for x in contents_list[0].text.splitlines() if x.strip()]
         except Exception:
             pass
     scored = []
