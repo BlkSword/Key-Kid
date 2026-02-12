@@ -1,6 +1,7 @@
-from typing import List, Tuple
+
+from ..utils.scoring import english_score
 from .models import BreakResult
-from ..utils.scoring import english_score, ioc
+
 
 def _letters_only(s: str) -> str:
     return ''.join(c for c in s if c.isalpha())
@@ -21,9 +22,9 @@ def caesar_break(ciphertext: str) -> BreakResult:
             best = BreakResult(algorithm="Caesar", plaintext=pt, key=str(k), confidence=sc)
     return best
 
-def vigenere_break(ciphertext: str, max_key_len: int = 16, top_k: int = 3) -> List[BreakResult]:
+def vigenere_break(ciphertext: str, max_key_len: int = 16, top_k: int = 3) -> list[BreakResult]:
     text = ciphertext
-    cands: List[Tuple[str, float, str]] = []
+    cands: list[tuple[str, float, str]] = []
     for klen in range(2, max_key_len + 1):
         key = []
         for i in range(klen):
@@ -63,8 +64,8 @@ def _affine_inv(a: int) -> int | None:
             return i
     return None
 
-def affine_break(ciphertext: str, top_k: int = 3) -> List[BreakResult]:
-    out: List[BreakResult] = []
+def affine_break(ciphertext: str, top_k: int = 3) -> list[BreakResult]:
+    out: list[BreakResult] = []
     for a in range(1, 26):
         inv = _affine_inv(a)
         if inv is None:
@@ -88,11 +89,11 @@ def affine_break(ciphertext: str, top_k: int = 3) -> List[BreakResult]:
     out.sort(key=lambda x: x.confidence, reverse=True)
     return out[:top_k]
 
-def _rail_pattern(n: int, rails: int) -> List[int]:
+def _rail_pattern(n: int, rails: int) -> list[int]:
     idx = []
     r = 0
     d = 1
-    for i in range(n):
+    for _i in range(n):
         idx.append(r)
         r += d
         if r == rails - 1:
@@ -118,8 +119,8 @@ def rail_fence_decrypt(ciphertext: str, rails: int) -> str:
         out.append(res[i])
     return ''.join(out)
 
-def rail_fence_break(ciphertext: str, max_rails: int = 10, top_k: int = 3) -> List[BreakResult]:
-    out: List[BreakResult] = []
+def rail_fence_break(ciphertext: str, max_rails: int = 10, top_k: int = 3) -> list[BreakResult]:
+    out: list[BreakResult] = []
     for rails in range(2, max_rails + 1):
         pt = rail_fence_decrypt(ciphertext, rails)
         sc = english_score(pt)
@@ -127,12 +128,12 @@ def rail_fence_break(ciphertext: str, max_rails: int = 10, top_k: int = 3) -> Li
     out.sort(key=lambda x: x.confidence, reverse=True)
     return out[:top_k]
 
-def _column_lengths(n: int, k: int) -> List[int]:
+def _column_lengths(n: int, k: int) -> list[int]:
     base = n // k
     extra = n % k
     return [base + (1 if i < extra else 0) for i in range(k)]
 
-def columnar_transposition_decrypt(ciphertext: str, key_order: List[int]) -> str:
+def columnar_transposition_decrypt(ciphertext: str, key_order: list[int]) -> str:
     n = len(ciphertext)
     k = len(key_order)
     lens = _column_lengths(n, k)
@@ -140,9 +141,9 @@ def columnar_transposition_decrypt(ciphertext: str, key_order: List[int]) -> str
     pos = 0
     for col_idx in range(k):
         real_col = key_order.index(col_idx)
-        l = lens[real_col]
-        cols[real_col] = ciphertext[pos:pos + l]
-        pos += l
+        col_len = lens[real_col]
+        cols[real_col] = ciphertext[pos:pos + col_len]
+        pos += col_len
     rows = []
     r = max(lens)
     for i in range(r):
@@ -151,9 +152,9 @@ def columnar_transposition_decrypt(ciphertext: str, key_order: List[int]) -> str
                 rows.append(cols[j][i])
     return ''.join(rows)
 
-def transposition_break(ciphertext: str, max_key_len: int = 5, top_k: int = 3) -> List[BreakResult]:
+def transposition_break(ciphertext: str, max_key_len: int = 5, top_k: int = 3) -> list[BreakResult]:
     import itertools
-    out: List[BreakResult] = []
+    out: list[BreakResult] = []
     for k in range(2, max_key_len + 1):
         for perm in itertools.permutations(range(k)):
             pt = columnar_transposition_decrypt(ciphertext, list(perm))
@@ -210,7 +211,7 @@ def playfair_decrypt(ciphertext: str, key_hint: str) -> str:
             out.append(table[rb * 5 + ca])
     return ''.join(out)
 
-def playfair_break(ciphertext: str, key_hint: str | None = None, top_k: int = 1) -> List[BreakResult]:
+def playfair_break(ciphertext: str, key_hint: str | None = None, top_k: int = 1) -> list[BreakResult]:
     if not key_hint:
         return [BreakResult(algorithm="Playfair", plaintext="", key=None, confidence=0.0)]
     pt = playfair_decrypt(ciphertext, key_hint)

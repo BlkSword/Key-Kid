@@ -1,14 +1,15 @@
 """Unit tests for SageMath tools."""
 import pytest
+
 from src.tools.sagemath import (
+    HAS_SAGEMATH,
+    chinese_remainder,
+    coppersmith_attack,
     discrete_log,
     elliptic_curve_factor,
-    chinese_remainder,
-    linear_congruence_system,
     elliptic_curve_point_add,
-    coppersmith_attack,
+    linear_congruence_system,
     quadratic_residue,
-    HAS_SAGEMATH,
 )
 
 

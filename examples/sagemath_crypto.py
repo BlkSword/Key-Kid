@@ -1,17 +1,18 @@
 """SageMath advanced cryptography examples."""
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.abspath("."))
 
 from src.tools.sagemath import (
+    HAS_SAGEMATH,
+    chinese_remainder,
+    coppersmith_attack,
     discrete_log,
     elliptic_curve_factor,
-    chinese_remainder,
+    elliptic_curve_point_add,
     linear_congruence_system,
     quadratic_residue,
-    elliptic_curve_point_add,
-    coppersmith_attack,
-    HAS_SAGEMATH,
 )
 
 

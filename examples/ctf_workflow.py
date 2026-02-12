@@ -1,6 +1,7 @@
 """CTF workflow example - solving a multi-step challenge."""
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.abspath("."))
 
 from src.tools.decode import detect_encoding
@@ -37,7 +38,7 @@ def solve_ctf_challenge(ciphertext: str):
     print("步骤 3: 尝试 XOR 破解")
     try:
         xor_results = xor_single_break(ciphertext, encoding="hex", top_k=1)
-        print(f"最佳 XOR 结果:")
+        print("最佳 XOR 结果:")
         print(f"  - 密钥: {xor_results[0].key}")
         print(f"  - 明文: {xor_results[0].plaintext[:100]}")
     except Exception as e:

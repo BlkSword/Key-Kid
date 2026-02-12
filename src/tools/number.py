@@ -1,11 +1,10 @@
-import math
 import random
 import shutil
 import subprocess
 from functools import lru_cache
-from typing import List
 
 from .models import FactorResult
+
 
 def _mul(x: int, y: int, mod: int) -> int:
     return (x * y) % mod
@@ -65,7 +64,7 @@ def _pollards_rho(n: int) -> int:
         if d != n:
             return d
 
-def _trial_division(n: int, limit: int = 100000) -> List[int]:
+def _trial_division(n: int, limit: int = 100000) -> list[int]:
     res = []
     while n % 2 == 0:
         res.append(2)
@@ -83,7 +82,7 @@ def _trial_division(n: int, limit: int = 100000) -> List[int]:
         res.append(n)
     return res
 
-def _factor_recursive(n: int, out: List[int]) -> None:
+def _factor_recursive(n: int, out: list[int]) -> None:
     if n == 1:
         return
     if _is_probable_prime(n):
@@ -93,7 +92,7 @@ def _factor_recursive(n: int, out: List[int]) -> None:
     _factor_recursive(d, out)
     _factor_recursive(n // d, out)
 
-def _factor_internal(n: int) -> List[int]:
+def _factor_internal(n: int) -> list[int]:
     res = []
     td = _trial_division(n)
     for v in td:
@@ -107,7 +106,7 @@ def _factor_internal(n: int) -> List[int]:
     res.sort()
     return res
 
-def _factor_with_yafu(n: int, timeout: int = 10) -> List[int] | None:
+def _factor_with_yafu(n: int, timeout: int = 10) -> list[int] | None:
     exe = (
         shutil.which("yafu-x64.exe")
         or shutil.which("yafu.exe")
@@ -119,13 +118,13 @@ def _factor_with_yafu(n: int, timeout: int = 10) -> List[int] | None:
         p = subprocess.run([exe, f"factor({n})"], capture_output=True, text=True, timeout=timeout)
         out = (p.stdout or "") + (p.stderr or "")
 
-        def _parse_ans_line(s: str) -> List[int] | None:
+        def _parse_ans_line(s: str) -> list[int] | None:
             for line in s.splitlines():
                 t = line.strip()
                 if t.lower().startswith("ans ="):
                     rhs = t.split("=", 1)[1].strip()
                     parts = [x.strip() for x in rhs.split("*") if x.strip()]
-                    vals: List[int] = []
+                    vals: list[int] = []
                     for tok in parts:
                         try:
                             vals.append(int(tok))
@@ -134,9 +133,9 @@ def _factor_with_yafu(n: int, timeout: int = 10) -> List[int] | None:
                     return vals if vals else None
             return None
 
-        def _parse_fac_lines(s: str) -> List[int] | None:
-            last_group: List[int] = []
-            current: List[int] = []
+        def _parse_fac_lines(s: str) -> list[int] | None:
+            last_group: list[int] = []
+            current: list[int] = []
             for line in s.splitlines():
                 t = line.strip()
                 if t.startswith("P") or t.startswith("PRP"):

@@ -1,6 +1,9 @@
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import anyio as _anyio
+
 
 class _GenericFunc:
     def __init__(self, fn):
@@ -12,32 +15,40 @@ class _GenericFunc:
 
 if not hasattr(_anyio.create_memory_object_stream, "__getitem__"):
     _anyio.create_memory_object_stream = _GenericFunc(_anyio.create_memory_object_stream)
-from mcp.server.fastmcp import FastMCP, Context
-from mcp.server.session import ServerSession
-from src.tools.models import BreakResult, DetectionCandidate
-from src.tools.rot import rot_all
-from src.tools.decode import detect_encoding, decode_common
-from src.tools.xor import xor_single_break, xor_repeating_break
-from src.tools.classic import caesar_break, vigenere_break, affine_break, rail_fence_break, transposition_break, playfair_break
-from src.tools.rc4 import rc4_decrypt
-from src.tools.number import factor_integer
-from src.resources.samples import register_samples
-from src.prompts.analyze import register_prompts
-from src.resources.wordlist import register_wordlist
-from src.tools.hash import hash_identify
-from src.tools.block import aes_decrypt, des_decrypt
-from src.tools.score import wordlist_score
-from src.utils.scoring import english_score
-from src.tools.sagemath import (
+from mcp.server.fastmcp import Context, FastMCP  # noqa: E402
+from mcp.server.session import ServerSession  # noqa: E402
+
+from src.prompts.analyze import register_prompts  # noqa: E402
+from src.resources.samples import register_samples  # noqa: E402
+from src.resources.wordlist import register_wordlist  # noqa: E402
+from src.tools.block import aes_decrypt, des_decrypt  # noqa: E402
+from src.tools.classic import (  # noqa: E402
+    affine_break,
+    caesar_break,
+    playfair_break,
+    rail_fence_break,
+    transposition_break,
+    vigenere_break,
+)
+from src.tools.decode import decode_common, detect_encoding  # noqa: E402
+from src.tools.hash import hash_identify  # noqa: E402
+from src.tools.models import BreakResult, DetectionCandidate  # noqa: E402
+from src.tools.number import factor_integer  # noqa: E402
+from src.tools.rc4 import rc4_decrypt  # noqa: E402
+from src.tools.rot import rot_all  # noqa: E402
+from src.tools.sagemath import (  # noqa: E402
+    HAS_SAGEMATH,
+    chinese_remainder,
+    coppersmith_attack,
     discrete_log,
     elliptic_curve_factor,
-    chinese_remainder,
-    linear_congruence_system,
     elliptic_curve_point_add,
-    coppersmith_attack,
+    linear_congruence_system,
     quadratic_residue,
-    HAS_SAGEMATH,
 )
+from src.tools.score import wordlist_score  # noqa: E402
+from src.tools.xor import xor_repeating_break, xor_single_break  # noqa: E402
+from src.utils.scoring import english_score  # noqa: E402
 
 mcp = FastMCP("CTF Crypto")
 register_samples(mcp)

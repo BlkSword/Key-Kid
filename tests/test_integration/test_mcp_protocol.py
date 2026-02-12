@@ -1,12 +1,14 @@
 """MCP protocol integration tests."""
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from mcp.testing import Client
+
 from src.server import mcp
 
 

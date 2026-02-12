@@ -1,6 +1,5 @@
 """Unit tests for decode/detection tools."""
-import pytest
-from src.tools.decode import detect_encoding, decode_common
+from src.tools.decode import decode_common, detect_encoding
 
 
 class TestDetectEncoding:

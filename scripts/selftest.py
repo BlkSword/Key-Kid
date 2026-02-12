@@ -1,12 +1,15 @@
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.abspath("."))
-from src.tools.rot import rot_all
-from src.tools.decode import detect_encoding, decode_common
-from src.tools.xor import xor_single_break, xor_repeating_break
-from src.tools.classic import caesar_break, vigenere_break, affine_break, rail_fence_break
-from src.tools.rc4 import rc4
+from src.tools.block import HAS_CRYPTOGRAPHY, HAS_PYCRYPTO, aes_decrypt, des_decrypt
+from src.tools.classic import affine_break, caesar_break, rail_fence_break, vigenere_break
+from src.tools.decode import decode_common, detect_encoding
 from src.tools.number import factor_integer
-from src.tools.block import HAS_PYCRYPTO, HAS_CRYPTOGRAPHY, aes_decrypt, des_decrypt
+from src.tools.rc4 import rc4
+from src.tools.rot import rot_all
+from src.tools.xor import xor_repeating_break, xor_single_break
+
 
 def main():
     r = rot_all("Uryyb Jbeyq", top_k=1)

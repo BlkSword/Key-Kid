@@ -1,9 +1,10 @@
-from typing import List
-from .models import BreakResult
-from ..utils.scoring import english_score
 
-def rot_all(text: str, top_k: int = 3) -> List[BreakResult]:
-    results: List[BreakResult] = []
+from ..utils.scoring import english_score
+from .models import BreakResult
+
+
+def rot_all(text: str, top_k: int = 3) -> list[BreakResult]:
+    results: list[BreakResult] = []
     for k in range(1, 26):
         out = []
         for c in text:

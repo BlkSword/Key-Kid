@@ -6,13 +6,9 @@ including discrete logarithms, elliptic curves, lattice reduction, etc.
 SageMath is a free open-source mathematics software system based on Python.
 Install from: https://www.sagemath.org/
 """
-import subprocess
 import shutil
-from typing import List, Tuple, Dict, Any
-import re
-
-from .models import BreakResult
-
+import subprocess
+from typing import Any
 
 # Check if SageMath is available
 _SAGE_BINARY = (
@@ -50,7 +46,7 @@ def _run_sage(code: str, timeout: int = 30) -> str | None:
         return None
 
 
-def discrete_log(g: str, p: str, base: str | None = None, method: str = "auto", timeout: int = 60) -> Dict[str, Any]:
+def discrete_log(g: str, p: str, base: str | None = None, method: str = "auto", timeout: int = 60) -> dict[str, Any]:
     """Solve discrete logarithm problem: find x such that base^x ≡ g (mod p).
 
     Uses SageMath's built-in discrete_log which employs:
@@ -161,7 +157,7 @@ except Exception as e:
     return result
 
 
-def elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120) -> Dict[str, Any]:
+def elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120) -> dict[str, Any]:
     """Factor integer using Lenstra's Elliptic Curve Method (ECM).
 
     ECM is effective for finding medium-sized factors (20-60 digits).
@@ -193,8 +189,6 @@ def elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120
 
     try:
         n_val = int(n, 0) if isinstance(n, str) else n
-        a_val = int(a, 0) if isinstance(a, str) else a
-        b_val = int(b, 0) if isinstance(b, str) else b
     except ValueError:
         return {
             "found": False,
@@ -242,7 +236,7 @@ except Exception as e:
     return result
 
 
-def chinese_remainder(congruences: List[Tuple[str, str]], timeout: int = 30) -> Dict[str, Any]:
+def chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> dict[str, Any]:
     """Solve system of linear congruences using Chinese Remainder Theorem.
 
     Find x such that:
@@ -330,7 +324,7 @@ except Exception as e:
     return result
 
 
-def linear_congruence_system(coefficients: List[str], remainders: List[str], moduli: List[str], timeout: int = 30) -> Dict[str, Any]:
+def linear_congruence_system(coefficients: list[str], remainders: list[str], moduli: list[str], timeout: int = 30) -> dict[str, Any]:
     """Solve system of linear congruences: Σ(ai * xi) ≡ bi (mod ni).
 
     Args:
@@ -419,7 +413,7 @@ except Exception as e:
     return result
 
 
-def elliptic_curve_point_add(curve_params: Tuple[str, str, str], p: str, p1: Tuple[str, str], p2: Tuple[str, str], timeout: int = 30) -> Dict[str, Any]:
+def elliptic_curve_point_add(curve_params: tuple[str, str, str], p: str, p1: tuple[str, str], p2: tuple[str, str], timeout: int = 30) -> dict[str, Any]:
     """Add two points on an elliptic curve: y² ≡ x³ + ax + b (mod p).
 
     Args:
@@ -481,7 +475,7 @@ except Exception as e:
     return result
 
 
-def coppersmith_attack(n: str, e: str, polynomial: str, beta: float = 0.5, timeout: int = 120) -> Dict[str, Any]:
+def coppersmith_attack(n: str, e: str, polynomial: str, beta: float = 0.5, timeout: int = 120) -> dict[str, Any]:
     """Coppersmith's method for finding small roots of modular polynomials.
 
     Useful for attacks on RSA with small exponent or low-exponent attacks.
@@ -539,7 +533,7 @@ except Exception as e:
             try:
                 result["roots"] = ast.literal_eval(roots_str)
                 result["found"] = len(result["roots"]) > 0
-            except:
+            except (ValueError, SyntaxError):
                 pass
         elif line.startswith("ERROR:"):
             result["error"] = line.split(":", 1)[1].strip()
@@ -549,7 +543,7 @@ except Exception as e:
     return result
 
 
-def quadratic_residue(a: str, p: str, timeout: int = 30) -> Dict[str, Any]:
+def quadratic_residue(a: str, p: str, timeout: int = 30) -> dict[str, Any]:
     """Find square roots of a modulo prime p: solve x² ≡ a (mod p).
 
     Uses Tonelli-Shanks algorithm for prime moduli.
@@ -598,7 +592,7 @@ except Exception as e:
             try:
                 result["roots"] = ast.literal_eval(roots_str)
                 result["found"] = len(result["roots"]) > 0
-            except:
+            except (ValueError, SyntaxError):
                 pass
         elif line.startswith("ERROR:"):
             result["error"] = line.split(":", 1)[1].strip()

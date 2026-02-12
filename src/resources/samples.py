@@ -1,5 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 
+
 def register_samples(mcp: FastMCP) -> None:
     @mcp.resource("samples://{id}")
     def samples(id: str) -> str:

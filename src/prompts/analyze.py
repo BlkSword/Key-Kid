@@ -1,5 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 
+
 def register_prompts(mcp: FastMCP) -> None:
     @mcp.prompt(title="AnalyzeCiphertext")
     def analyze(ciphertext: str) -> str:

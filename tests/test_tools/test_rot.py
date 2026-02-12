@@ -1,5 +1,4 @@
 """Unit tests for ROT tools."""
-import pytest
 from src.tools.rot import rot_all
 
 
@@ -71,7 +70,7 @@ class TestRotAll:
 
     def test_rot_all_rot13_specific(self):
         """Test ROT13 specifically (common cipher)."""
-        results = rot_all("Uryyb Jbeyq", top_k=1)
+        _ = rot_all("Uryyb Jbeyq", top_k=1)
         # ROT13 should produce readable English, so it should rank highly
         # The exact rank depends on scoring, but it should be in top results
         all_results = rot_all("Uryyb Jbeyq", top_k=25)

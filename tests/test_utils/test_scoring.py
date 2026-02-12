@@ -1,7 +1,7 @@
 """Unit tests for scoring system."""
-import pytest
 import time
-from src.utils.scoring import english_score, ioc, hamming_distance
+
+from src.utils.scoring import english_score, hamming_distance, ioc
 
 
 class TestEnglishScore:
@@ -86,12 +86,12 @@ class TestEnglishScore:
         # First call (cache miss)
         start = time.time()
         english_score(text)
-        first_duration = time.time() - start
+        _first_duration = time.time() - start
 
         # Second call (cache hit)
         start = time.time()
         english_score(text)
-        second_duration = time.time() - start
+        _second_duration = time.time() - start
 
         # Cache hit should be significantly faster
         # (Note: this may be flaky on very fast systems, but the ratio should be clear)

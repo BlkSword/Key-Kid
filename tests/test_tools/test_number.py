@@ -1,5 +1,4 @@
 """Unit tests for number theory tools."""
-import pytest
 from src.tools.number import factor_integer
 
 
@@ -89,7 +88,7 @@ class TestInternalHelpers:
         """Test trial division works via factor_integer."""
         # Small numbers should be factored quickly by trial division
         result = factor_integer(100, prefer_yafu=False)
-        assert set(result.factors) == {"2", "2", "5", "5"}
+        assert set(result.factors) == {"2", "5"}
 
     def test_pollards_rho_visible(self):
         """Test Pollard's Rho works via factor_integer."""

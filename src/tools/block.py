@@ -1,4 +1,3 @@
-from typing import Optional
 import base64
 
 try:
@@ -9,8 +8,8 @@ except Exception:
     HAS_PYCRYPTO = False
 
 try:
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     HAS_CRYPTOGRAPHY = True
 except Exception:
     HAS_CRYPTOGRAPHY = False
@@ -78,7 +77,7 @@ def _des_cryptography(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> byt
     pt = decryptor.update(ct) + decryptor.finalize()
     return _pkcs7_unpad(pt)
 
-async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: Optional[str] = None, key_encoding: str = "hex", iv: Optional[str] = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
+async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "hex", iv: str | None = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
     ct = _parse(ciphertext, cipher_encoding)
     if key is None:
         if ctx is not None:
@@ -110,7 +109,7 @@ async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: Option
         return ""
     return pt.decode(errors="ignore")
 
-async def des_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: Optional[str] = None, key_encoding: str = "hex", iv: Optional[str] = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
+async def des_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "hex", iv: str | None = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
     ct = _parse(ciphertext, cipher_encoding)
     if key is None:
         if ctx is not None:

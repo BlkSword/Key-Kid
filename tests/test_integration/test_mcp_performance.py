@@ -1,14 +1,17 @@
 """MCP performance and memory tests."""
-import pytest
-import time
 import asyncio
+import os
 
 # Add src to path
 import sys
-import os
+import time
+
+import pytest
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from mcp.testing import Client
+
 from src.server import mcp
 
 
@@ -19,7 +22,7 @@ class TestMCPPerformance:
     async def test_mcp_startup_time(self):
         """Test MCP server startup time."""
         start = time.time()
-        async with Client(mcp) as client:
+        async with Client(mcp) as _client:
             startup_time = time.time() - start
             # Startup should be fast (< 2 seconds)
             assert startup_time < 2.0, f"Startup time {startup_time:.2f}s exceeds 2s"
@@ -38,7 +41,7 @@ class TestMCPPerformance:
         """Test tool response time for xor_single_break."""
         async with Client(mcp) as client:
             start = time.time()
-            result = await client.call_tool(
+            _ = await client.call_tool(
                 "tool_xor_single_break",
                 {"data": "3f292c2c2b", "encoding": "hex", "top_k": 3}
             )
@@ -73,12 +76,12 @@ class TestMCPPerformance:
         # First call (cache miss)
         start = time.time()
         english_score(text)
-        first_duration = time.time() - start
+        _first_duration = time.time() - start
 
         # Second call (cache hit)
         start = time.time()
         english_score(text)
-        second_duration = time.time() - start
+        _second_duration = time.time() - start
 
         # Cache hit should be much faster
         # Note: This might be flaky on very fast systems
@@ -89,8 +92,9 @@ class TestMCPPerformance:
     async def test_mcp_memory_usage(self):
         """Test memory usage stays bounded."""
         try:
-            import psutil
             import os
+
+            import psutil
 
             process = psutil.Process(os.getpid())
             initial_memory = process.memory_info().rss / 1024 / 1024

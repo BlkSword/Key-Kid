@@ -1,10 +1,9 @@
 import base64
-import binascii
-from typing import List
 from urllib.parse import unquote
 
-from .models import DetectionCandidate
 from ..utils.scoring import english_score
+from .models import DetectionCandidate
+
 
 def _try_decode_base64(s: str) -> str | None:
     try:
@@ -76,8 +75,8 @@ DECODERS = [
     ("binary", _try_decode_binary),
 ]
 
-def detect_encoding(text: str, top_k: int = 5) -> List[DetectionCandidate]:
-    cands: List[DetectionCandidate] = []
+def detect_encoding(text: str, top_k: int = 5) -> list[DetectionCandidate]:
+    cands: list[DetectionCandidate] = []
     for name, fn in DECODERS:
         decoded = fn(text)
         if decoded is not None:
@@ -86,9 +85,9 @@ def detect_encoding(text: str, top_k: int = 5) -> List[DetectionCandidate]:
     cands.sort(key=lambda x: x.score, reverse=True)
     return cands[:top_k]
 
-def decode_common(text: str, limit: int = 10) -> List[DetectionCandidate]:
+def decode_common(text: str, limit: int = 10) -> list[DetectionCandidate]:
     seen = {}
-    out: List[DetectionCandidate] = []
+    out: list[DetectionCandidate] = []
     for name, fn in DECODERS:
         decoded = fn(text)
         if decoded is not None:

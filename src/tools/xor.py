@@ -1,10 +1,10 @@
-from typing import List
 import base64
-from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 
-from .models import BreakResult
 from ..utils.scoring import english_score, hamming_distance
+from .models import BreakResult
+
 
 def _parse_data(data: str, encoding: str) -> bytes:
     if encoding == "hex":
@@ -13,7 +13,7 @@ def _parse_data(data: str, encoding: str) -> bytes:
         return base64.b64decode(data)
     return data.encode()
 
-def xor_single_break(data: str, encoding: str = "hex", top_k: int = 3) -> List[BreakResult]:
+def xor_single_break(data: str, encoding: str = "hex", top_k: int = 3) -> list[BreakResult]:
     b = _parse_data(data, encoding)
 
     def try_key(k: int) -> BreakResult:

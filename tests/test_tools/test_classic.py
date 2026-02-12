@@ -1,12 +1,11 @@
 """Unit tests for classic cipher tools."""
-import pytest
 from src.tools.classic import (
-    caesar_break,
-    vigenere_break,
     affine_break,
+    caesar_break,
+    playfair_break,
     rail_fence_break,
     transposition_break,
-    playfair_break,
+    vigenere_break,
 )
 
 

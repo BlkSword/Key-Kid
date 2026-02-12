@@ -1,4 +1,3 @@
-import math
 import re
 from functools import lru_cache
 
@@ -54,14 +53,14 @@ def english_score(s: str) -> float:
     """
     if not s:
         return 0.0
-    
+
     # 1. Flag detection shortcut
     if FLAG_PATTERN.search(s):
         return 10.0  # Immediate high score for flag-like patterns
 
     s_lower = s.lower()
     n = len(s)
-    
+
     # 2. Letter frequency score
     letter_score = 0.0
     printable_count = 0
@@ -70,22 +69,22 @@ def english_score(s: str) -> float:
             letter_score += LETTER_FREQ[ch.lower()]
         if ch.isprintable():
             printable_count += 1
-            
+
     # Penalize heavily if mostly non-printable
     if n > 0 and (printable_count / n) < 0.7:
         return 0.0
 
     # Normalize letter score (max approx 1.0 for perfect distribution)
-    # We just sum probabilities, so for a long perfect text, sum/n ~ sum(p^2)? 
+    # We just sum probabilities, so for a long perfect text, sum/n ~ sum(p^2)?
     # No, here we just sum freq[char]. For perfect English, expected sum per char is sum(p_i^2) ≈ 0.065
     # But the original implementation just summed them. Let's keep it simple but robust.
     # We'll use the Coefficient of Determination or Chi-Squared in a full implementation,
     # but here let's just normalize by length.
     avg_letter_score = letter_score / n if n > 0 else 0
-    # Expected avg for random garbage is 1/26 ≈ 0.038 (ignoring space). 
+    # Expected avg for random garbage is 1/26 ≈ 0.038 (ignoring space).
     # Expected avg for English is ≈ 0.065.
     # Scale: (val - 0.03) / (0.07 - 0.03)
-    normalized_letter = (avg_letter_score - 0.03) * 25 
+    normalized_letter = (avg_letter_score - 0.03) * 25
     normalized_letter = max(0.0, min(1.0, normalized_letter))
 
     # 3. Bigram score
@@ -100,9 +99,9 @@ def english_score(s: str) -> float:
         bigram_score = bigram_score * 5 # Heuristic boost
 
     total = normalized_letter * 0.7 + bigram_score * 0.3
-    
+
     # Penalize rare characters / high ascii if needed, but isprintable check handles most garbage.
-    
+
     return min(1.0, total)
 
 def ioc(s: str) -> float:
@@ -119,5 +118,5 @@ def ioc(s: str) -> float:
     return num / den
 
 def hamming_distance(a: bytes, b: bytes) -> int:
-    x = bytes(x ^ y for x, y in zip(a, b))
+    x = bytes(x ^ y for x, y in zip(a, b, strict=True))
     return sum(bin(byte).count("1") for byte in x)

@@ -1,8 +1,8 @@
-from typing import List
 
-def hash_identify(text: str) -> List[str]:
+
+def hash_identify(text: str) -> list[str]:
     s = text.strip()
-    out: List[str] = []
+    out: list[str] = []
     hexchars = set("0123456789abcdefABCDEF")
     is_hex = all(c in hexchars for c in s)
     if is_hex:

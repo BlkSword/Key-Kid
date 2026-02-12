@@ -1,7 +1,8 @@
 """Performance demonstration - cache effectiveness."""
-import sys
 import os
+import sys
 import time
+
 sys.path.insert(0, os.path.abspath("."))
 
 from src.utils.scoring import english_score

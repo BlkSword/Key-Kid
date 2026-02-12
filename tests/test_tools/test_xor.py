@@ -1,6 +1,7 @@
 """Unit tests for XOR tools."""
 import pytest
-from src.tools.xor import xor_single_break, xor_repeating_break, _parse_data
+
+from src.tools.xor import _parse_data, xor_repeating_break, xor_single_break
 
 
 class TestParseData:

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class DetectionCandidate(BaseModel):
     name: str
     score: float = Field(ge=0, le=1)
