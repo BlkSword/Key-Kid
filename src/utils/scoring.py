@@ -1,5 +1,6 @@
-import re
 from functools import lru_cache
+import re
+
 
 LETTER_FREQ = {
     "a": 0.08167,
@@ -96,43 +97,51 @@ def english_score(s: str) -> float:
     # 2. Letter frequency score
     letter_score = 0.0
     printable_count = 0
+    alpha_count = 0
     for ch in s:
         if ch.lower() in LETTER_FREQ:
             letter_score += LETTER_FREQ[ch.lower()]
         if ch.isprintable():
             printable_count += 1
+        if ch.isalpha():
+            alpha_count += 1
 
     # Penalize heavily if mostly non-printable
     if n > 0 and (printable_count / n) < 0.7:
         return 0.0
 
+    # Penalize if too few alphabetic characters
+    if n > 0 and (alpha_count / n) < 0.5:
+        return 0.0
+
     # Normalize letter score (max approx 1.0 for perfect distribution)
-    # We just sum probabilities, so for a long perfect text, sum/n ~ sum(p^2)?
-    # No, here we just sum freq[char]. For perfect English, expected sum per char is sum(p_i^2) ≈ 0.065
-    # But the original implementation just summed them. Let's keep it simple but robust.
-    # We'll use the Coefficient of Determination or Chi-Squared in a full implementation,
-    # but here let's just normalize by length.
     avg_letter_score = letter_score / n if n > 0 else 0
     # Expected avg for random garbage is 1/26 ≈ 0.038 (ignoring space).
     # Expected avg for English is ≈ 0.065.
-    # Scale: (val - 0.03) / (0.07 - 0.03)
-    normalized_letter = (avg_letter_score - 0.03) * 25
+    # Scale: (val - 0.038) / (0.069 - 0.038)
+    normalized_letter = (avg_letter_score - 0.038) / 0.031
     normalized_letter = max(0.0, min(1.0, normalized_letter))
 
-    # 3. Bigram score
+    # 3. Bigram score - more balanced approach
     bigram_score = 0.0
+    bigram_count = 0
     if n > 1:
         for i in range(n - 1):
             bg = s_lower[i : i + 2]
             if bg in BIGRAM_FREQ:
                 bigram_score += BIGRAM_FREQ[bg]
-        # Normalize bigram score
-        # Max possible bigram sum per char is small. Let's just add it as a boost.
-        bigram_score = bigram_score * 5  # Heuristic boost
+                bigram_count += 1
+        # Normalize: average score per bigram, capped at reasonable max
+        if bigram_count > 0:
+            avg_bigram = bigram_score / bigram_count
+            # Scale bigrams: expected max avg is ~0.005, cap at 0.05
+            # This prevents bigram score from dominating
+            bigram_score = min(0.05, avg_bigram) / 0.005
+        else:
+            bigram_score = 0.0
 
+    # Combine scores: 70% letter freq, 30% bigram
     total = normalized_letter * 0.7 + bigram_score * 0.3
-
-    # Penalize rare characters / high ascii if needed, but isprintable check handles most garbage.
 
     return min(1.0, total)
 
