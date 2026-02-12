@@ -1,5 +1,5 @@
 # Production dependencies with pinned versions
-mcp[cli]==0.1.4
+mcp[cli]==1.26.0
 pydantic==2.5.3
 pydantic-core==2.14.6
 pycryptodome==3.19.0
