@@ -1,5 +1,6 @@
 import math
 import re
+from functools import lru_cache
 
 LETTER_FREQ = {
     "a": 0.08167,
@@ -45,6 +46,7 @@ BIGRAM_FREQ = {
 
 FLAG_PATTERN = re.compile(r"(flag|ctf|key|secret)\{.*?\}", re.IGNORECASE)
 
+@lru_cache(maxsize=2048)
 def english_score(s: str) -> float:
     """
     Calculate a score for how 'English-like' the text is.

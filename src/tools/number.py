@@ -2,6 +2,7 @@ import math
 import random
 import shutil
 import subprocess
+from functools import lru_cache
 from typing import List
 
 from .models import FactorResult
@@ -12,6 +13,7 @@ def _mul(x: int, y: int, mod: int) -> int:
 def _powmod(a: int, d: int, n: int) -> int:
     return pow(a, d, n)
 
+@lru_cache(maxsize=256)
 def _is_probable_prime(n: int) -> bool:
     if n < 2:
         return False
@@ -74,6 +76,9 @@ def _trial_division(n: int, limit: int = 100000) -> List[int]:
             res.append(f)
             n //= f
         f += 2
+        # Early termination: if n is prime, stop
+        if n > 1 and n < 1000000 and _is_probable_prime(n):
+            break
     if n > 1:
         res.append(n)
     return res

@@ -28,6 +28,16 @@ from src.tools.hash import hash_identify
 from src.tools.block import aes_decrypt, des_decrypt
 from src.tools.score import wordlist_score
 from src.utils.scoring import english_score
+from src.tools.sagemath import (
+    discrete_log,
+    elliptic_curve_factor,
+    chinese_remainder,
+    linear_congruence_system,
+    elliptic_curve_point_add,
+    coppersmith_attack,
+    quadratic_residue,
+    HAS_SAGEMATH,
+)
 
 mcp = FastMCP("CTF Crypto")
 register_samples(mcp)
@@ -251,6 +261,111 @@ async def tool_rot_all_wordlist(text: str, top_k: int = 3, wordlist_name: str = 
         scored.append(BreakResult(algorithm=br.algorithm, plaintext=br.plaintext, key=br.key, confidence=combined))
     scored.sort(key=lambda x: x.confidence, reverse=True)
     return scored[:top_k]
+
+# SageMath Tools
+@mcp.tool()
+def tool_discrete_log(g: str, p: str, base: str | None = None, method: str = "auto", timeout: int = 60) -> dict:
+    """Solve discrete logarithm: find x where base^x ≡ g (mod p) using SageMath.
+
+    Purpose: Solve DLP problems common in DH cryptanalysis and CTF challenges.
+    Usage: `g` (target), `p` (prime modulus), `base` (generator, optional); `method` selects algorithm (auto/bsgs/ph/rho).
+    Returns: Dict with `found` (bool), `x` (solution if found), `method` used, `time` taken, and `error` message if failed.
+    Related: Requires SageMath; uses baby-step giant-step or Pollard's rho depending on `method`.
+    """
+    return discrete_log(g, p, base, method, timeout)
+
+@mcp.tool()
+def tool_elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120) -> dict:
+    """Factor integer using Lenstra's Elliptic Curve Method (ECM) via SageMath.
+
+    Purpose: Find medium-sized factors (20-60 digits) when other methods are too slow.
+    Usage: `n` (integer to factor); optional curve params `a`/`b` for specific curves (defaults use random curves).
+    Returns: Dict with `found`, `factor` (non-trivial divisor), `remaining` (cofactor), and `error` if failed.
+    Related: Use `tool_factor_integer` for small factors or Pollard's rho; ECM excels at medium-sized prime factors.
+    """
+    return elliptic_curve_factor(n, a, b, timeout)
+
+@mcp.tool()
+def tool_chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> dict:
+    """Solve system of linear congruences using Chinese Remainder Theorem via SageMath.
+
+    Purpose: Find x satisfying: x ≡ a₁ (mod n₁), x ≡ a₂ (mod n₂), ...
+    Usage: `congruences` is list of (remainder, modulus) tuples as strings.
+    Returns: Dict with `found`, `x` (solution), `modulus` (product of all moduli), and `error` if unsolvable.
+    Related: Common in RSA attacks and side-channel cryptanalysis; requires coprime moduli.
+    """
+    return chinese_remainder(congruences, timeout)
+
+@mcp.tool()
+def tool_linear_congruence(coefficients: list[str], remainders: list[str], moduli: list[str], timeout: int = 30) -> dict:
+    """Solve linear congruence system: Σ(ai*xi) ≡ bi (mod ni) using SageMath.
+
+    Purpose: Solve equations of the form a*x ≡ b (mod n) or similar linear systems.
+    Usage: Provide `coefficients`, `remainders`, and `moduli` as parallel lists.
+    Returns: Dict with solution `x`, `modulus`, and `error` if no solution.
+    Related: Extension of `tool_chinese_remainder` for coefficient-based equations.
+    """
+    return linear_congruence_system(coefficients, remainders, moduli, timeout)
+
+@mcp.tool()
+def tool_elliptic_curve_point_add(curve_params: tuple[str, str, str], p: str, p1: tuple[str, str], p2: tuple[str, str], timeout: int = 30) -> dict:
+    """Add two points on an elliptic curve: y² ≡ x³ + ax + b (mod p) using SageMath.
+
+    Purpose: Perform elliptic curve arithmetic for ECC cryptanalysis.
+    Usage: `curve_params` = (a, b, modulus), `p`/`p2` are points as (x, y) tuples.
+    Returns: Dict with resulting point coordinates `x`, `y`, and `error` if point not on curve.
+    Related: Useful for ECC CTF challenges; supports operations over prime fields.
+    """
+    return elliptic_curve_point_add(curve_params, p, p1, p2, timeout)
+
+@mcp.tool()
+def tool_coppersmith_attack(n: str, e: str, polynomial: str, beta: float = 0.5, timeout: int = 120) -> dict:
+    """Coppersmith's method for finding small roots of modular polynomials via SageMath.
+
+    Purpose: Find small roots in RSA low-exponent attacks, boneh-durfee, and related problems.
+    Usage: `n` (RSA modulus), `e` (public exponent), `polynomial` in x (e.g., "x^3 + 4*x^2 + x"), `beta` bounds root size.
+    Returns: Dict with `found` status, `roots` list, and `error` if none found.
+    Related: Powerful for RSA with small d or broadcast attacks; requires polynomial form.
+    """
+    return coppersmith_attack(n, e, polynomial, beta, timeout)
+
+@mcp.tool()
+def tool_quadratic_residue(a: str, p: str, timeout: int = 30) -> dict:
+    """Find square roots of a modulo prime p: solve x² ≡ a (mod p) using SageMath.
+
+    Purpose: Compute modular square roots (Tonelli-Shanks) for Rabin cryptosystem and similar.
+    Usage: `a` (quadratic residue), `p` (prime modulus).
+    Returns: Dict with `roots` list (0, 1, or 2 solutions), `found` status, and `error` if not a residue.
+    Related: Used in Rabin decryption and quadratic residue problems; requires prime modulus.
+    """
+    return quadratic_residue(a, p, timeout)
+
+@mcp.tool()
+def tool_sagemath_check() -> dict:
+    """Check if SageMath is available and show version info.
+
+    Purpose: Verify SageMath installation before using advanced math tools.
+    Usage: No parameters required.
+    Returns: Dict with `available` (bool), `version` (if available), and `installation_help` if not found.
+    Related: Run this first to confirm your SageMath setup before using discrete_log or other tools.
+    """
+    if HAS_SAGEMATH:
+        return {
+            "available": True,
+            "installed": True,
+            "message": "SageMath is available and ready to use for advanced cryptography tools."
+        }
+    else:
+        return {
+            "available": False,
+            "installed": False,
+            "message": "SageMath not found. Install from https://www.sagemath.org/ to use advanced math tools.",
+            "installation_help": {
+                "windows": "Download installer from https://www.sagemath.org/download.html",
+                "linux": "Package manager: sudo apt-get install sagemath (Debian/Ubuntu)",
+                "macos": "brew install sage (Homebrew) or download .dmg from website"
+            }
+        }
 
 def main():
     transport = os.environ.get("MCP_TRANSPORT", "stdio")

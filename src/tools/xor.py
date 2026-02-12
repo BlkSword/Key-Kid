@@ -1,5 +1,7 @@
 from typing import List
 import base64
+from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
 
 from .models import BreakResult
 from ..utils.scoring import english_score, hamming_distance
@@ -13,12 +15,18 @@ def _parse_data(data: str, encoding: str) -> bytes:
 
 def xor_single_break(data: str, encoding: str = "hex", top_k: int = 3) -> List[BreakResult]:
     b = _parse_data(data, encoding)
-    results: List[BreakResult] = []
-    for k in range(256):
+
+    def try_key(k: int) -> BreakResult:
         pt = bytes(x ^ k for x in b)
         txt = pt.decode(errors="ignore")
         score = english_score(txt)
-        results.append(BreakResult(algorithm="XOR-single", plaintext=txt, key=str(k), confidence=score))
+        return BreakResult(algorithm="XOR-single", plaintext=txt, key=str(k), confidence=score)
+
+    # Use parallel processing for better performance
+    max_workers = min(256, (multiprocessing.cpu_count() or 4) * 4)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = list(executor.map(try_key, range(256)))
+
     results.sort(key=lambda x: x.confidence, reverse=True)
     return results[:top_k]
 

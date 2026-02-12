@@ -1,5 +1,9 @@
 # Key-Kid
 
+[![CI](https://github.com/yourusername/key-kid/workflows/CI/badge.svg)](https://github.com/yourusername/key-kid/actions)
+[![codecov](https://codecov.io/gh/yourusername/key-kid/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/key-kid)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+
 CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解码与破解工具，助力快速解决比赛题目。
 
 ## 特性
@@ -7,7 +11,10 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 - 经典密码破解：Caesar/ROT、Vigenère、Affine、Rail Fence、列式置换、Playfair（支持 key 提示）
 - XOR 家族：单字节与重复密钥破解
 - RC4 解密：支持缺参时交互征询密钥
+- **SageMath 高级工具**：离散对数、椭圆曲线、格基约化、中国剩余定理（需安装 SageMath）
 - 结构化输出、可用于自动化 agent 流程
+- **80%+ 测试覆盖率**
+- **性能优化**：跨调用缓存、并行化枚举攻击
 
 ## 安装
 - 安装 MCP Python SDK
@@ -87,6 +94,52 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 ## 自检
 - `python scripts/selftest.py` 查看基础功能输出（包含因式分解示例）
 
+## 开发
+
+### 环境设置
+```bash
+# 克隆仓库
+git clone https://github.com/yourusername/key-kid.git
+cd key-kid
+
+# 安装开发依赖
+pip install -e ".[dev]"
+
+# 安装 pre-commit 钩子
+pre-commit install
+```
+
+### 运行测试
+```bash
+# 运行所有测试
+pytest
+
+# 运行测试并生成覆盖率报告
+pytest --cov=src --cov-report=html
+
+# 查看覆盖率报告
+# 打开 htmlcov/index.html
+```
+
+### 代码质量检查
+```bash
+# Lint
+ruff check src/
+
+# 类型检查
+mypy src/ --ignore-missing-imports
+
+# 格式化
+black src/ tests/
+isort src/ tests/
+
+# 运行所有检查
+pre-commit run --all-files
+```
+
+### 贡献
+欢迎贡献！请查看 [CONTRTRIBUTING.md](docs/CONTRIBUTING.md) 了解详情。
+
 ## yafu 集成
 - 若系统已安装 `yafu` 或 `yafu.exe` 并处于 `PATH`，`tool_factor_integer` 将自动调用以提升大整数分解效率
 - 无 `yafu` 时自动回退到内置 Pollard Rho + Miller-Rabin + 试除组合
@@ -95,3 +148,38 @@ CTF 密码学 MCP Server，提供面向 agent 的多种密码算法识别、解�
 - 大规模枚举任务已做限制；必要时请提供更多线索以缩小搜索空间
 - RC4/AES 等现代密码需提供密钥等参数；AES 计划在后续版本引入
 - AES/DES 工具需安装 `pycryptodome` 或 `cryptography`，否则返回空结果；请根据环境选择安装其一
+
+## SageMath 集成
+
+Key-Kid 包含基于 SageMath 的高级密码学工具，用于解决复杂的数论问题：
+
+### 安装 SageMath
+
+**Windows**: 从 https://www.sagemath.org/ 下载安装程序
+**Linux**: `sudo apt-get install sagemath`
+**macOS**: `brew install sage`
+
+### 可用工具
+
+- `tool_discrete_log(g, p, base, method)` - 离散对数求解（DLP）
+- `tool_elliptic_curve_factor(n, a, b)` - 椭圆曲线因式分解（ECM）
+- `tool_chinese_remainder(congruences)` - 中国剩余定理（CRT）
+- `tool_linear_congruence(coefficients, remainders, moduli)` - 线性同余方程组
+- `tool_elliptic_curve_point_add(curve, p, p1, p2)` - 椭圆曲线点加法
+- `tool_coppersmith_attack(n, e, polynomial, beta)` - Coppersmith 方法
+- `tool_quadratic_residue(a, p)` - 模平方根求解
+- `tool_sagemath_check()` - 检查 SageMath 可用性
+
+详细文档请参考 [SAGEMATH.md](docs/SAGEMATH.md)
+
+### 使用示例
+
+```python
+# 离散对数：求解 2^x ≡ 5 (mod 101)
+tool_discrete_log(g="5", p="101", base="2")
+# 返回: {"found": True, "x": "10"}
+
+# 中国剩余定理：x ≡ 2 (mod 3), x ≡ 3 (mod 5)
+tool_chinese_remainder(congruences=[("2", "3"), ("3", "5")])
+# 返回: {"found": True, "x": "23", "modulus": "15"}
+```

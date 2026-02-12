@@ -210,3 +210,13 @@ __marimo__/
 # Other
 MCP-README.md
 
+# Project-specific
+*.log
+factor.log
+session.log
+.envrc
+
+# Pre-commit
+.pre-commit-config.yaml.bak
+
+.claude
