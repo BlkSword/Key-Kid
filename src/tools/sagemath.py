@@ -47,8 +47,6 @@ def _run_sage(code: str, timeout: int = 30) -> str | None:
 
 
 def discrete_log(g: str, p: str, base: str | None = None, method: str = "auto", timeout: int = 60) -> dict[str, Any]:
-    # Type alias for result dict
-    ResultDict = dict[str, Any]
     """Solve discrete logarithm problem: find x such that base^x ≡ g (mod p).
 
     Uses SageMath's built-in discrete_log which employs:
@@ -142,7 +140,7 @@ except Exception as e:
         }
 
     # Parse output
-    result: ResultDict = {"found": False, "x": None, "method": method, "time": None, "error": None}
+    result: dict[str, Any] = {"found": False, "x": None, "method": method, "time": None, "error": None}
 
     for line in output.splitlines():
         if line.startswith("RESULT:"):
@@ -160,7 +158,6 @@ except Exception as e:
 
 
 def elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120) -> dict[str, Any]:
-    ResultDict = dict[str, Any]
     """Factor integer using Lenstra's Elliptic Curve Method (ECM).
 
     ECM is effective for finding medium-sized factors (20-60 digits).
@@ -223,7 +220,7 @@ except Exception as e:
             "error": f"SageMath execution failed or timeout (> {timeout}s)"
         }
 
-    result: ResultDict = {"found": False, "factor": None, "remaining": None, "error": None}
+    result: dict[str, Any] = {"found": False, "factor": None, "remaining": None, "error": None}
 
     for line in output.splitlines():
         if line.startswith("FACTOR:"):
@@ -240,7 +237,6 @@ except Exception as e:
 
 
 def chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> dict[str, Any]:
-    ResultDict = dict[str, Any]
     """Solve system of linear congruences using Chinese Remainder Theorem.
 
     Find x such that:
@@ -312,7 +308,7 @@ except Exception as e:
             "error": "SageMath execution failed"
         }
 
-    result: ResultDict = {"found": False, "x": None, "modulus": None, "error": None}
+    result: dict[str, Any] = {"found": False, "x": None, "modulus": None, "error": None}
 
     for line in output.splitlines():
         if line.startswith("X:"):
@@ -329,7 +325,6 @@ except Exception as e:
 
 
 def linear_congruence_system(coefficients: list[str], remainders: list[str], moduli: list[str], timeout: int = 30) -> dict[str, Any]:
-    ResultDict = dict[str, Any]
     """Solve system of linear congruences: Σ(ai * xi) ≡ bi (mod ni).
 
     Args:
@@ -397,7 +392,7 @@ except Exception as e:
     if output is None:
         return {"found": False, "error": "SageMath execution failed"}
 
-    result: ResultDict = {"found": False, "x": None, "modulus": None, "error": None}
+    result: dict[str, Any] = {"found": False, "x": None, "modulus": None, "error": None}
 
     for line in output.splitlines():
         if line.startswith("X:"):
@@ -419,7 +414,6 @@ except Exception as e:
 
 
 def elliptic_curve_point_add(curve_params: tuple[str, str, str], p: str, p1: tuple[str, str], p2: tuple[str, str], timeout: int = 30) -> dict[str, Any]:
-    ResultDict = dict[str, Any]
     """Add two points on an elliptic curve: y² ≡ x³ + ax + b (mod p).
 
     Args:
@@ -467,7 +461,7 @@ except Exception as e:
     if output is None:
         return {"found": False, "x": None, "y": None, "error": "SageMath execution failed"}
 
-    result: ResultDict = {"found": False, "x": None, "y": None, "error": None}
+    result: dict[str, Any] = {"found": False, "x": None, "y": None, "error": None}
 
     for line in output.splitlines():
         if line.startswith("X:"):
@@ -482,7 +476,6 @@ except Exception as e:
 
 
 def coppersmith_attack(n: str, e: str, polynomial: str, beta: float = 0.5, timeout: int = 120) -> dict[str, Any]:
-    ResultDict = dict[str, Any]
     """Coppersmith's method for finding small roots of modular polynomials.
 
     Useful for attacks on RSA with small exponent or low-exponent attacks.
@@ -555,7 +548,6 @@ except Exception as e:
 
 
 def quadratic_residue(a: str, p: str, timeout: int = 30) -> dict[str, Any]:
-    ResultDict = dict[str, Any]
     """Find square roots of a modulo prime p: solve x² ≡ a (mod p).
 
     Uses Tonelli-Shanks algorithm for prime moduli.
@@ -595,7 +587,7 @@ except Exception as e:
     if output is None:
         return {"found": False, "roots": [], "error": "SageMath execution failed"}
 
-    result: ResultDict = {"found": False, "roots": [], "error": None}
+    result: dict[str, Any] = {"found": False, "roots": [], "error": None}
 
     for line in output.splitlines():
         if line.startswith("ROOTS:"):
