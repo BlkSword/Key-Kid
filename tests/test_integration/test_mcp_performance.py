@@ -1,4 +1,5 @@
 """MCP performance and memory tests."""
+
 import asyncio
 import os
 
@@ -42,8 +43,7 @@ class TestMCPPerformance:
         async with Client(mcp) as client:
             start = time.time()
             _ = await client.call_tool(
-                "tool_xor_single_break",
-                {"data": "3f292c2c2b", "encoding": "hex", "top_k": 3}
+                "tool_xor_single_break", {"data": "3f292c2c2b", "encoding": "hex", "top_k": 3}
             )
             response_time = time.time() - start
             assert response_time < 1.0, f"Response time {response_time:.2f}s exceeds 1s"
@@ -103,8 +103,7 @@ class TestMCPPerformance:
                 # Execute many tool calls
                 for i in range(100):
                     await client.call_tool(
-                        "tool_rot_all",
-                        {"text": f"Test text {i} " * 10, "top_k": 1}
+                        "tool_rot_all", {"text": f"Test text {i} " * 10, "top_k": 1}
                     )
 
                 final_memory = process.memory_info().rss / 1024 / 1024

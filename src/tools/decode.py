@@ -11,11 +11,13 @@ def _try_decode_base64(s: str) -> str | None:
     except Exception:
         return None
 
+
 def _try_decode_base32(s: str) -> str | None:
     try:
         return base64.b32decode(s, casefold=True).decode(errors="ignore")
     except Exception:
         return None
+
 
 def _try_decode_base16(s: str) -> str | None:
     try:
@@ -23,17 +25,20 @@ def _try_decode_base16(s: str) -> str | None:
     except Exception:
         return None
 
+
 def _try_decode_b85(s: str) -> str | None:
     try:
         return base64.b85decode(s).decode(errors="ignore")
     except Exception:
         return None
 
+
 def _try_decode_hex(s: str) -> str | None:
     try:
         return bytes.fromhex(s).decode(errors="ignore")
     except Exception:
         return None
+
 
 def _try_decode_url(s: str) -> str | None:
     try:
@@ -44,11 +49,13 @@ def _try_decode_url(s: str) -> str | None:
     except Exception:
         return None
 
+
 def _try_decode_unicode_escape(s: str) -> str | None:
     try:
         return s.encode("utf-8").decode("unicode_escape")
     except Exception:
         return None
+
 
 def _try_decode_binary(s: str) -> str | None:
     """Try to decode binary string (e.g., '0100100001100101...')"""
@@ -59,10 +66,11 @@ def _try_decode_binary(s: str) -> str | None:
         return None
     try:
         # Split into 8-bit chunks
-        bytes_list = [int(s_clean[i:i+8], 2) for i in range(0, len(s_clean), 8)]
+        bytes_list = [int(s_clean[i : i + 8], 2) for i in range(0, len(s_clean), 8)]
         return bytes(bytes_list).decode(errors="ignore")
     except Exception:
         return None
+
 
 DECODERS = [
     ("base64", _try_decode_base64),
@@ -75,6 +83,7 @@ DECODERS = [
     ("binary", _try_decode_binary),
 ]
 
+
 def detect_encoding(text: str, top_k: int = 5) -> list[DetectionCandidate]:
     cands: list[DetectionCandidate] = []
     for name, fn in DECODERS:
@@ -84,6 +93,7 @@ def detect_encoding(text: str, top_k: int = 5) -> list[DetectionCandidate]:
             cands.append(DetectionCandidate(name=name, score=score, decoded=decoded))
     cands.sort(key=lambda x: x.score, reverse=True)
     return cands[:top_k]
+
 
 def decode_common(text: str, limit: int = 10) -> list[DetectionCandidate]:
     seen = {}

@@ -28,7 +28,11 @@ MCP_TOOL_CALLS = {
     "tool_xor_single_break": {"data": "3f292c2c2b", "encoding": "hex", "top_k": 3},
     "tool_vigenere_break": {"ciphertext": "Lxfopvefrnhr", "max_key_len": 8, "top_k": 1},
     "tool_affine_break": {"ciphertext": "ZEBBW", "top_k": 1},
-    "tool_rail_fence_break": {"ciphertext": "WECRLTEERDSOEEFEAOCAIVDEN", "max_rails": 5, "top_k": 1},
+    "tool_rail_fence_break": {
+        "ciphertext": "WECRLTEERDSOEEFEAOCAIVDEN",
+        "max_rails": 5,
+        "top_k": 1,
+    },
     "tool_detect_encoding": {"text": "SGVsbG8gd29ybGQ=", "top_k": 5},
     "tool_decode_common": {"text": "48656c6c6f", "limit": 10},
 }
@@ -59,8 +63,10 @@ HASH_SAMPLES = {
     "md5": "5d41402abc4b2a76b9719d911017c592",
     "sha1": "356a192b7913b04c54574d18c28d46e6395428ab",
     "sha256": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
-    "sha512": ("9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca7"
-               "231c85373578ef9087f6679279735365675675675"),
+    "sha512": (
+        "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca7"
+        "231c85373578ef9087f6679279735365675675675"
+    ),
 }
 
 # 质数分解样本

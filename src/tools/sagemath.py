@@ -6,16 +6,13 @@ including discrete logarithms, elliptic curves, lattice reduction, etc.
 SageMath is a free open-source mathematics software system based on Python.
 Install from: https://www.sagemath.org/
 """
+
 import shutil
 import subprocess
 from typing import Any
 
 # Check if SageMath is available
-_SAGE_BINARY = (
-    shutil.which("sage")
-    or shutil.which("sage.exe")
-    or shutil.which("sagemath")
-)
+_SAGE_BINARY = shutil.which("sage") or shutil.which("sage.exe") or shutil.which("sagemath")
 HAS_SAGEMATH = _SAGE_BINARY is not None
 
 
@@ -34,10 +31,7 @@ def _run_sage(code: str, timeout: int = 30) -> str | None:
 
     try:
         result = subprocess.run(
-            [_SAGE_BINARY, "--python", "-c", code],
-            capture_output=True,
-            text=True,
-            timeout=timeout
+            [_SAGE_BINARY, "--python", "-c", code], capture_output=True, text=True, timeout=timeout
         )
         return str(result.stdout)
     except subprocess.TimeoutExpired:
@@ -46,7 +40,9 @@ def _run_sage(code: str, timeout: int = 30) -> str | None:
         return None
 
 
-def discrete_log(g: str, p: str, base: str | None = None, method: str = "auto", timeout: int = 60) -> dict[str, Any]:
+def discrete_log(
+    g: str, p: str, base: str | None = None, method: str = "auto", timeout: int = 60
+) -> dict[str, Any]:
     """Solve discrete logarithm problem: find x such that base^x ≡ g (mod p).
 
     Uses SageMath's built-in discrete_log which employs:
@@ -79,7 +75,7 @@ def discrete_log(g: str, p: str, base: str | None = None, method: str = "auto", 
             "found": False,
             "x": None,
             "method": method,
-            "error": "SageMath not installed. Install from https://www.sagemath.org/"
+            "error": "SageMath not installed. Install from https://www.sagemath.org/",
         }
 
     # Parse inputs
@@ -92,7 +88,7 @@ def discrete_log(g: str, p: str, base: str | None = None, method: str = "auto", 
             "found": False,
             "x": None,
             "method": method,
-            "error": "Invalid number format (use decimal or 0x... for hex)"
+            "error": "Invalid number format (use decimal or 0x... for hex)",
         }
 
     # Build SageMath code
@@ -136,11 +132,17 @@ except Exception as e:
             "found": False,
             "x": None,
             "method": method,
-            "error": f"SageMath execution failed or timeout (> {timeout}s)"
+            "error": f"SageMath execution failed or timeout (> {timeout}s)",
         }
 
     # Parse output
-    result: dict[str, Any] = {"found": False, "x": None, "method": method, "time": None, "error": None}
+    result: dict[str, Any] = {
+        "found": False,
+        "x": None,
+        "method": method,
+        "time": None,
+        "error": None,
+    }
 
     for line in output.splitlines():
         if line.startswith("RESULT:"):
@@ -181,20 +183,12 @@ def elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120
         {"found": True, "factor": "1234567", ...}
     """
     if not HAS_SAGEMATH:
-        return {
-            "found": False,
-            "factor": None,
-            "error": "SageMath not installed"
-        }
+        return {"found": False, "factor": None, "error": "SageMath not installed"}
 
     try:
         n_val = int(n, 0) if isinstance(n, str) else n
     except ValueError:
-        return {
-            "found": False,
-            "factor": None,
-            "error": "Invalid number format"
-        }
+        return {"found": False, "factor": None, "error": "Invalid number format"}
 
     sage_code = f"""
 n = {n_val}
@@ -217,7 +211,7 @@ except Exception as e:
         return {
             "found": False,
             "factor": None,
-            "error": f"SageMath execution failed or timeout (> {timeout}s)"
+            "error": f"SageMath execution failed or timeout (> {timeout}s)",
         }
 
     result: dict[str, Any] = {"found": False, "factor": None, "remaining": None, "error": None}
@@ -261,12 +255,7 @@ def chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> 
         {"found": True, "x": "23", "modulus": "105"}
     """
     if not HAS_SAGEMATH:
-        return {
-            "found": False,
-            "x": None,
-            "modulus": None,
-            "error": "SageMath not installed"
-        }
+        return {"found": False, "x": None, "modulus": None, "error": "SageMath not installed"}
 
     # Build congruence list
     cong_list = []
@@ -280,7 +269,7 @@ def chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> 
                 "found": False,
                 "x": None,
                 "modulus": None,
-                "error": f"Invalid number format: {rem}, {mod}"
+                "error": f"Invalid number format: {rem}, {mod}",
             }
 
     sage_code = f"""
@@ -301,12 +290,7 @@ except Exception as e:
     output = _run_sage(sage_code, timeout)
 
     if output is None:
-        return {
-            "found": False,
-            "x": None,
-            "modulus": None,
-            "error": "SageMath execution failed"
-        }
+        return {"found": False, "x": None, "modulus": None, "error": "SageMath execution failed"}
 
     result: dict[str, Any] = {"found": False, "x": None, "modulus": None, "error": None}
 
@@ -324,7 +308,9 @@ except Exception as e:
     return result
 
 
-def linear_congruence_system(coefficients: list[str], remainders: list[str], moduli: list[str], timeout: int = 30) -> dict[str, Any]:
+def linear_congruence_system(
+    coefficients: list[str], remainders: list[str], moduli: list[str], timeout: int = 30
+) -> dict[str, Any]:
     """Solve system of linear congruences: Σ(ai * xi) ≡ bi (mod ni).
 
     Args:
@@ -413,7 +399,13 @@ except Exception as e:
     return result
 
 
-def elliptic_curve_point_add(curve_params: tuple[str, str, str], p: str, p1: tuple[str, str], p2: tuple[str, str], timeout: int = 30) -> dict[str, Any]:
+def elliptic_curve_point_add(
+    curve_params: tuple[str, str, str],
+    p: str,
+    p1: tuple[str, str],
+    p2: tuple[str, str],
+    timeout: int = 30,
+) -> dict[str, Any]:
     """Add two points on an elliptic curve: y² ≡ x³ + ax + b (mod p).
 
     Args:
@@ -475,7 +467,9 @@ except Exception as e:
     return result
 
 
-def coppersmith_attack(n: str, e: str, polynomial: str, beta: float = 0.5, timeout: int = 120) -> dict[str, Any]:
+def coppersmith_attack(
+    n: str, e: str, polynomial: str, beta: float = 0.5, timeout: int = 120
+) -> dict[str, Any]:
     """Coppersmith's method for finding small roots of modular polynomials.
 
     Useful for attacks on RSA with small exponent or low-exponent attacks.
@@ -530,6 +524,7 @@ except Exception as e:
             roots_str = line.split(":", 1)[1].strip()
             # Parse list representation
             import ast
+
             try:
                 parsed_roots = ast.literal_eval(roots_str)
                 if isinstance(parsed_roots, list):
@@ -593,6 +588,7 @@ except Exception as e:
         if line.startswith("ROOTS:"):
             roots_str = line.split(":", 1)[1].strip()
             import ast
+
             try:
                 parsed_roots = ast.literal_eval(roots_str)
                 if isinstance(parsed_roots, list):

@@ -1,4 +1,5 @@
 """Pytest configuration and fixtures for Key-Kid tests."""
+
 from pathlib import Path
 
 import pytest
@@ -37,8 +38,10 @@ def mcp_server():
     """Provide MCP server instance for integration tests."""
     import os
     import sys
+
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from src.server import mcp
+
     return mcp
 
 

@@ -1,5 +1,3 @@
-
-
 def hash_identify(text: str) -> list[str]:
     s = text.strip()
     out: list[str] = []

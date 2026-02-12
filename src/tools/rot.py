@@ -1,4 +1,3 @@
-
 from ..utils.scoring import english_score
 from .models import BreakResult
 

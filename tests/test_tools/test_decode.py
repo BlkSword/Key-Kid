@@ -1,4 +1,5 @@
 """Unit tests for decode/detection tools."""
+
 from src.tools.decode import decode_common, detect_encoding
 
 

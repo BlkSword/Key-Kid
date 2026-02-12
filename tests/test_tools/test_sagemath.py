@@ -1,4 +1,5 @@
 """Unit tests for SageMath tools."""
+
 import pytest
 
 from src.tools.sagemath import (
@@ -149,7 +150,7 @@ class TestEllipticCurvePointAdd:
         result = elliptic_curve_point_add(
             ("2", "2", "17"),  # a, b, p
             ("5", "1"),  # P1
-            ("5", "1")   # P2 = P1, so P1+P1 = 2*P1
+            ("5", "1"),  # P2 = P1, so P1+P1 = 2*P1
         )
         assert result is not None
         assert "found" in result
@@ -157,11 +158,7 @@ class TestEllipticCurvePointAdd:
     def test_point_not_on_curve(self):
         """Test with point not on curve."""
         # This should fail since (0, 0) is not on y² = x³ + 2x + 2
-        result = elliptic_curve_point_add(
-            ("2", "2", "17"),
-            ("0", "0"),
-            ("5", "1")
-        )
+        result = elliptic_curve_point_add(("2", "2", "17"), ("0", "0"), ("5", "1"))
         # Should either fail or return error
         assert "error" in result
 
@@ -175,8 +172,8 @@ class TestCoppersmithAttack:
         # Small example
         result = coppersmith_attack(
             "15",  # n (small example)
-            "3",    # e
-            "x"     # polynomial
+            "3",  # e
+            "x",  # polynomial
         )
         assert result is not None
         assert "roots" in result
@@ -186,7 +183,7 @@ class TestCoppersmithAttack:
         result = coppersmith_attack(
             "15",
             "3",
-            "invalid(x"  # Missing closing paren
+            "invalid(x",  # Missing closing paren
         )
         assert result["found"] is False or "error" in result
 

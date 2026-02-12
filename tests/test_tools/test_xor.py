@@ -1,4 +1,5 @@
 """Unit tests for XOR tools."""
+
 import pytest
 
 from src.tools.xor import _parse_data, xor_repeating_break, xor_single_break
@@ -87,10 +88,7 @@ class TestXorRepeatingBreak:
         """Test key length range parameters."""
         # Should use min_key and max_key
         results = xor_repeating_break(
-            "5468697320697320612074657374",
-            encoding="hex",
-            min_key=2,
-            max_key=5
+            "5468697320697320612074657374", encoding="hex", min_key=2, max_key=5
         )
         assert results.algorithm == "XOR-repeating"
         # Should find a key in the tested range

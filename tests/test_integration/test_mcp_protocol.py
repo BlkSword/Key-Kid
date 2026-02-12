@@ -1,4 +1,5 @@
 """MCP protocol integration tests."""
+
 import os
 import sys
 
@@ -46,8 +47,7 @@ class TestMCPProtocol:
         """Test MCP tool call for xor_single_break."""
         async with Client(mcp) as client:
             result = await client.call_tool(
-                "tool_xor_single_break",
-                {"data": "3f292c2c2b", "encoding": "hex", "top_k": 1}
+                "tool_xor_single_break", {"data": "3f292c2c2b", "encoding": "hex", "top_k": 1}
             )
             assert len(result) >= 1
 
@@ -55,8 +55,7 @@ class TestMCPProtocol:
         """Test MCP tool call for detect_encoding."""
         async with Client(mcp) as client:
             result = await client.call_tool(
-                "tool_detect_encoding",
-                {"text": "SGVsbG8gd29ybGQ=", "top_k": 5}
+                "tool_detect_encoding", {"text": "SGVsbG8gd29ybGQ=", "top_k": 5}
             )
             assert len(result) >= 1
 
@@ -86,6 +85,7 @@ class TestMCPProtocol:
     async def test_mcp_concurrent_tool_calls(self):
         """Test concurrent tool calls."""
         import asyncio
+
         async with Client(mcp) as client:
             tasks = [
                 client.call_tool("tool_rot_all", {"text": "Uryyb Jbeyq", "top_k": 1})
@@ -106,8 +106,7 @@ class TestMCPProtocol:
         """Test MCP tool call for vigenere_break."""
         async with Client(mcp) as client:
             result = await client.call_tool(
-                "tool_vigenere_break",
-                {"ciphertext": "Lxfopvefrnhr", "max_key_len": 8, "top_k": 1}
+                "tool_vigenere_break", {"ciphertext": "Lxfopvefrnhr", "max_key_len": 8, "top_k": 1}
             )
             assert len(result) >= 1
 
@@ -115,8 +114,7 @@ class TestMCPProtocol:
         """Test MCP tool call for affine_break."""
         async with Client(mcp) as client:
             result = await client.call_tool(
-                "tool_affine_break",
-                {"ciphertext": "ZEBBW", "top_k": 1}
+                "tool_affine_break", {"ciphertext": "ZEBBW", "top_k": 1}
             )
             assert len(result) >= 1
 
@@ -125,6 +123,6 @@ class TestMCPProtocol:
         async with Client(mcp) as client:
             result = await client.call_tool(
                 "tool_rail_fence_break",
-                {"ciphertext": "WECRLTEERDSOEEFEAOCAIVDEN", "max_rails": 5, "top_k": 1}
+                {"ciphertext": "WECRLTEERDSOEEFEAOCAIVDEN", "max_rails": 5, "top_k": 1},
             )
             assert len(result) >= 1

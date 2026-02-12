@@ -33,17 +33,49 @@ LETTER_FREQ = {
 
 # Top 30 English Bigrams (approximate frequencies)
 BIGRAM_FREQ = {
-    "th": 0.0152, "he": 0.0128, "in": 0.0094, "er": 0.0094, "an": 0.0082,
-    "re": 0.0068, "nd": 0.0063, "at": 0.0059, "on": 0.0057, "nt": 0.0056,
-    "ha": 0.0056, "es": 0.0056, "st": 0.0055, "en": 0.0055, "ed": 0.0053,
-    "to": 0.0052, "it": 0.0050, "ou": 0.0050, "ea": 0.0047, "hi": 0.0046,
-    "is": 0.0046, "or": 0.0043, "ti": 0.0034, "as": 0.0033, "te": 0.0027,
-    "et": 0.0019, "ng": 0.0018, "of": 0.0016, "al": 0.0009, "de": 0.0009,
-    "se": 0.0008, "le": 0.0008, "sa": 0.0006, "si": 0.0005, "ar": 0.0004,
-    "ve": 0.0004, "ra": 0.0004, "ld": 0.0002, "ur": 0.0002,
+    "th": 0.0152,
+    "he": 0.0128,
+    "in": 0.0094,
+    "er": 0.0094,
+    "an": 0.0082,
+    "re": 0.0068,
+    "nd": 0.0063,
+    "at": 0.0059,
+    "on": 0.0057,
+    "nt": 0.0056,
+    "ha": 0.0056,
+    "es": 0.0056,
+    "st": 0.0055,
+    "en": 0.0055,
+    "ed": 0.0053,
+    "to": 0.0052,
+    "it": 0.0050,
+    "ou": 0.0050,
+    "ea": 0.0047,
+    "hi": 0.0046,
+    "is": 0.0046,
+    "or": 0.0043,
+    "ti": 0.0034,
+    "as": 0.0033,
+    "te": 0.0027,
+    "et": 0.0019,
+    "ng": 0.0018,
+    "of": 0.0016,
+    "al": 0.0009,
+    "de": 0.0009,
+    "se": 0.0008,
+    "le": 0.0008,
+    "sa": 0.0006,
+    "si": 0.0005,
+    "ar": 0.0004,
+    "ve": 0.0004,
+    "ra": 0.0004,
+    "ld": 0.0002,
+    "ur": 0.0002,
 }
 
 FLAG_PATTERN = re.compile(r"(flag|ctf|key|secret)\{.*?\}", re.IGNORECASE)
+
 
 @lru_cache(maxsize=2048)
 def english_score(s: str) -> float:
@@ -91,18 +123,19 @@ def english_score(s: str) -> float:
     bigram_score = 0.0
     if n > 1:
         for i in range(n - 1):
-            bg = s_lower[i:i+2]
+            bg = s_lower[i : i + 2]
             if bg in BIGRAM_FREQ:
                 bigram_score += BIGRAM_FREQ[bg]
         # Normalize bigram score
         # Max possible bigram sum per char is small. Let's just add it as a boost.
-        bigram_score = bigram_score * 5 # Heuristic boost
+        bigram_score = bigram_score * 5  # Heuristic boost
 
     total = normalized_letter * 0.7 + bigram_score * 0.3
 
     # Penalize rare characters / high ascii if needed, but isprintable check handles most garbage.
 
     return min(1.0, total)
+
 
 def ioc(s: str) -> float:
     freq: dict[str, int] = {}
@@ -116,6 +149,7 @@ def ioc(s: str) -> float:
     num = sum(v * (v - 1) for v in freq.values())
     den = n * (n - 1)
     return float(num) / float(den)
+
 
 def hamming_distance(a: bytes, b: bytes) -> int:
     x = bytes(x ^ y for x, y in zip(a, b, strict=True))

@@ -1,4 +1,5 @@
 """Unit tests for scoring system."""
+
 import time
 
 from src.utils.scoring import english_score, hamming_distance, ioc

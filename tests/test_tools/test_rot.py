@@ -1,4 +1,5 @@
 """Unit tests for ROT tools."""
+
 from src.tools.rot import rot_all
 
 

@@ -3,6 +3,7 @@ import base64
 try:
     from Crypto.Cipher import AES as PYCAES
     from Crypto.Cipher import DES as PYCDES
+
     HAS_PYCRYPTO = True
 except Exception:
     HAS_PYCRYPTO = False
@@ -10,9 +11,11 @@ except Exception:
 try:
     from cryptography.hazmat.backends import default_backend
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
     HAS_CRYPTOGRAPHY = True
 except Exception:
     HAS_CRYPTOGRAPHY = False
+
 
 def _parse(data: str, enc: str) -> bytes:
     if enc == "hex":
@@ -20,6 +23,7 @@ def _parse(data: str, enc: str) -> bytes:
     if enc == "b64":
         return base64.b64decode(data)
     return data.encode()
+
 
 def _pkcs7_unpad(b: bytes) -> bytes:
     if not b:
@@ -30,6 +34,7 @@ def _pkcs7_unpad(b: bytes) -> bytes:
     if b.endswith(bytes([pad]) * pad):
         return b[:-pad]
     return b
+
 
 def _aes_pycrypto(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     m = mode.upper()
@@ -44,6 +49,7 @@ def _aes_pycrypto(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     pt = cipher.decrypt(ct)
     return _pkcs7_unpad(pt)
 
+
 def _des_pycrypto(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     m = mode.upper()
     if m == "ECB":
@@ -56,6 +62,7 @@ def _des_pycrypto(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
         raise ValueError("Unsupported DES mode")
     pt = cipher.decrypt(ct)
     return _pkcs7_unpad(pt)
+
 
 def _aes_cryptography(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     m = mode.upper()
@@ -70,6 +77,7 @@ def _aes_cryptography(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> byt
     decryptor = cipher_obj.decryptor()
     pt = decryptor.update(ct) + decryptor.finalize()
     return _pkcs7_unpad(pt)
+
 
 def _des_cryptography(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> bytes:
     m = mode.upper()
@@ -86,17 +94,29 @@ def _des_cryptography(ct: bytes, key: bytes, iv: bytes | None, mode: str) -> byt
     pt = decryptor.update(ct) + decryptor.finalize()
     return _pkcs7_unpad(pt)
 
-async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "hex", iv: str | None = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
+
+async def aes_decrypt(
+    ciphertext: str,
+    cipher_encoding: str = "hex",
+    key: str | None = None,
+    key_encoding: str = "hex",
+    iv: str | None = None,
+    iv_encoding: str = "hex",
+    mode: str = "CBC",
+    ctx: object | None = None,
+) -> str:
     ct = _parse(ciphertext, cipher_encoding)
     if key is None:
         if ctx is not None and hasattr(ctx, "elicit"):
             from pydantic import BaseModel
+
             class AESParams(BaseModel):
                 key: str
                 key_encoding: str = "hex"
                 iv: str | None = None
                 iv_encoding: str = "hex"
                 mode: str = "CBC"
+
             res = await ctx.elicit("需要 AES 解密参数", AESParams)  # type: ignore[attr-defined]
             if res.action == "accept" and res.data:
                 key = res.data.key
@@ -118,17 +138,29 @@ async def aes_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | 
         return ""
     return pt.decode(errors="ignore")
 
-async def des_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "hex", iv: str | None = None, iv_encoding: str = "hex", mode: str = "CBC", ctx: object | None = None) -> str:
+
+async def des_decrypt(
+    ciphertext: str,
+    cipher_encoding: str = "hex",
+    key: str | None = None,
+    key_encoding: str = "hex",
+    iv: str | None = None,
+    iv_encoding: str = "hex",
+    mode: str = "CBC",
+    ctx: object | None = None,
+) -> str:
     ct = _parse(ciphertext, cipher_encoding)
     if key is None:
         if ctx is not None and hasattr(ctx, "elicit"):
             from pydantic import BaseModel
+
             class DESParams(BaseModel):
                 key: str
                 key_encoding: str = "hex"
                 iv: str | None = None
                 iv_encoding: str = "hex"
                 mode: str = "CBC"
+
             res = await ctx.elicit("需要 DES 解密参数", DESParams)  # type: ignore[attr-defined]
             if res.action == "accept" and res.data:
                 key = res.data.key

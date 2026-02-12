@@ -10,6 +10,7 @@ def _parse(data: str, enc: str) -> bytes:
         return base64.b64decode(data)
     return data.encode()
 
+
 def rc4(data: bytes, key: bytes) -> bytes:
     s = list(range(256))
     j = 0
@@ -27,11 +28,19 @@ def rc4(data: bytes, key: bytes) -> bytes:
         out.append(b ^ k)
     return bytes(out)
 
+
 class RC4Params(BaseModel):
     key: str
     key_encoding: str = "raw"
 
-async def rc4_decrypt(ciphertext: str, cipher_encoding: str = "hex", key: str | None = None, key_encoding: str = "raw", ctx: object | None = None) -> str:
+
+async def rc4_decrypt(
+    ciphertext: str,
+    cipher_encoding: str = "hex",
+    key: str | None = None,
+    key_encoding: str = "raw",
+    ctx: object | None = None,
+) -> str:
     c = _parse(ciphertext, cipher_encoding)
     if not key:
         if ctx is not None and hasattr(ctx, "elicit"):

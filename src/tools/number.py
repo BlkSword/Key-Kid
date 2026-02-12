@@ -9,8 +9,10 @@ from .models import FactorResult
 def _mul(x: int, y: int, mod: int) -> int:
     return (x * y) % mod
 
+
 def _powmod(a: int, d: int, n: int) -> int:
     return pow(a, d, n)
+
 
 @lru_cache(maxsize=256)
 def _is_probable_prime(n: int) -> bool:
@@ -43,10 +45,12 @@ def _is_probable_prime(n: int) -> bool:
         return False
     return True
 
+
 def _gcd(a: int, b: int) -> int:
     while b:
         a, b = b, a % b
     return a
+
 
 def _pollards_rho(n: int) -> int:
     if n % 2 == 0:
@@ -63,6 +67,7 @@ def _pollards_rho(n: int) -> int:
             d = _gcd(abs(x - y), n)
         if d != n:
             return d
+
 
 def _trial_division(n: int, limit: int = 100000) -> list[int]:
     res = []
@@ -82,6 +87,7 @@ def _trial_division(n: int, limit: int = 100000) -> list[int]:
         res.append(n)
     return res
 
+
 def _factor_recursive(n: int, out: list[int]) -> None:
     if n == 1:
         return
@@ -91,6 +97,7 @@ def _factor_recursive(n: int, out: list[int]) -> None:
     d = _pollards_rho(n)
     _factor_recursive(d, out)
     _factor_recursive(n // d, out)
+
 
 def _factor_internal(n: int) -> list[int]:
     res = []
@@ -106,12 +113,9 @@ def _factor_internal(n: int) -> list[int]:
     res.sort()
     return res
 
+
 def _factor_with_yafu(n: int, timeout: int = 10) -> list[int] | None:
-    exe = (
-        shutil.which("yafu-x64.exe")
-        or shutil.which("yafu.exe")
-        or shutil.which("yafu")
-    )
+    exe = shutil.which("yafu-x64.exe") or shutil.which("yafu.exe") or shutil.which("yafu")
     if not exe:
         return None
     try:
@@ -176,7 +180,10 @@ def _factor_with_yafu(n: int, timeout: int = 10) -> list[int] | None:
     except Exception:
         return None
 
-def factor_integer(n: int | str, prefer_yafu: bool = True, timeout: int = 10, ctx=None) -> FactorResult:
+
+def factor_integer(
+    n: int | str, prefer_yafu: bool = True, timeout: int = 10, ctx=None
+) -> FactorResult:
     if isinstance(n, str):
         nn = int(n, 0)
     else:

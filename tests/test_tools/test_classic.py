@@ -1,4 +1,5 @@
 """Unit tests for classic cipher tools."""
+
 from src.tools.classic import (
     affine_break,
     caesar_break,

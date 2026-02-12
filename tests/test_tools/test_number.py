@@ -1,4 +1,5 @@
 """Unit tests for number theory tools."""
+
 from src.tools.number import factor_integer
 
 
