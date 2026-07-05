@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.tools.xor import _parse_data, xor_repeating_break, xor_single_break
+from src.tools.xor import _parse_data, xor_known_plaintext, xor_repeating_break, xor_single_break
 
 
 class TestParseData:
@@ -107,3 +107,31 @@ class TestXorRepeatingBreak:
         assert results.plaintext is not None
         assert results.key is not None
         assert 0 <= results.confidence <= 1
+
+
+class TestXorKnownPlaintext:
+    """Tests for known-plaintext XOR attack."""
+
+    def test_xor_known_plaintext_repeating_key(self):
+        """Test recovering a repeating XOR key with a known plaintext fragment."""
+        key = b"SECRET"
+        pt = b"The password is hello and the flag is hidden here"
+        ct = bytes(pt[i] ^ key[i % len(key)] for i in range(len(pt)))
+        ct_hex = ct.hex()
+        # We know the first 6 bytes are "The pa".
+        result = xor_known_plaintext(ct_hex, "The pa", encoding="hex")
+        assert result.algorithm == "XOR-known-plaintext"
+        assert "password" in result.plaintext.lower()
+
+    def test_xor_known_plaintext_single_byte(self):
+        """Test recovering single-byte XOR when one plaintext byte is known."""
+        pt = b"Hello World"
+        ct = bytes(b ^ 0x42 for b in pt)
+        ct_hex = ct.hex()
+        result = xor_known_plaintext(ct_hex, "H", encoding="hex", offset=0)
+        assert "Hello World" in result.plaintext
+
+    def test_xor_known_plaintext_invalid_offset(self):
+        """Test graceful handling of invalid offset."""
+        result = xor_known_plaintext("001122", "too long known plaintext", encoding="hex")
+        assert result.confidence == 0.0

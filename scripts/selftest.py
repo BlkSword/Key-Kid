@@ -24,9 +24,14 @@ def main():
     print("xor_repeating_break:", xr.key, xr.plaintext[:16])
     cb = caesar_break("Uryyb Jbeyq")
     print("caesar_break:", cb.key, cb.plaintext)
-    vb = vigenere_break("Lxfopvefrnhr", max_key_len=8, top_k=1)
+    vb = vigenere_break(
+        "llg gelkaqih bk lgcph srf klx xpcx ml zmfuig zitv "
+        "teweuv jbfh kk unagmcc uwjqii lgqgfrx wpuv hhww",
+        max_key_len=10,
+        top_k=1,
+    )
     print("vigenere_break:", vb[0].key, vb[0].plaintext)
-    ab = affine_break("ZEBBW", top_k=1)
+    ab = affine_break("ZRCIHHWVCSWFRCPWUI", top_k=3)
     print("affine_break:", ab[0].key, ab[0].plaintext)
     rf = rail_fence_break("WECRLTEERDSOEEFEAOCAIVDEN", max_rails=5, top_k=1)
     print("rail_fence_break:", rf[0].key, rf[0].plaintext[:10])
@@ -39,23 +44,41 @@ def main():
     if HAS_PYCRYPTO or HAS_CRYPTOGRAPHY:
         try:
             # AES CBC PKCS7 example (hex inputs). This is illustrative; actual values may differ
-            pt_aes = awaitable(aes_decrypt("6bc1bee22e409f96e93d7e117393172a", "hex", "2b7e151628aed2a6abf7158809cf4f3c", "hex", "000102030405060708090a0b0c0d0e0f", "hex", "CBC"))
+            pt_aes = awaitable(
+                aes_decrypt(
+                    "6bc1bee22e409f96e93d7e117393172a",
+                    "hex",
+                    "2b7e151628aed2a6abf7158809cf4f3c",
+                    "hex",
+                    "000102030405060708090a0b0c0d0e0f",
+                    "hex",
+                    "CBC",
+                )
+            )
             print("aes_decrypt:", pt_aes[:8])
         except Exception as e:
             print("aes_decrypt: skipped", str(e))
         try:
-            pt_des = awaitable(des_decrypt("85e813540f0ab405", "hex", "133457799BBCDFF1", "hex", None, "hex", "ECB"))
+            pt_des = awaitable(
+                des_decrypt(
+                    "85e813540f0ab405", "hex", "133457799BBCDFF1", "hex", None, "hex", "ECB"
+                )
+            )
             print("des_decrypt:", pt_des[:8])
         except Exception as e:
             print("des_decrypt: skipped", str(e))
 
+
 def awaitable(coro):
     try:
         import asyncio
+
         return asyncio.get_event_loop().run_until_complete(coro)
     except RuntimeError:
         import asyncio
+
         return asyncio.run(coro)
+
 
 if __name__ == "__main__":
     main()

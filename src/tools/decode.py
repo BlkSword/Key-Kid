@@ -75,9 +75,9 @@ def _try_decode_binary(s: str) -> str | None:
 DECODERS = [
     ("base64", _try_decode_base64),
     ("base32", _try_decode_base32),
+    ("hex", _try_decode_hex),
     ("base16", _try_decode_base16),
     ("base85", _try_decode_b85),
-    ("hex", _try_decode_hex),
     ("url", _try_decode_url),
     ("unicode_escape", _try_decode_unicode_escape),
     ("binary", _try_decode_binary),

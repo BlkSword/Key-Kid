@@ -81,3 +81,45 @@ def xor_repeating_break(
         key=best_key.decode(errors="ignore"),
         confidence=best_score,
     )
+
+
+def xor_known_plaintext(
+    data: str,
+    plaintext: str,
+    encoding: str = "hex",
+    plaintext_encoding: str = "raw",
+    offset: int = 0,
+) -> BreakResult:
+    """Recover a repeating XOR key fragment when part of the plaintext is known.
+
+    The recovered fragment is XORed against the ciphertext at ``offset`` to reveal
+    the corresponding key bytes. Those bytes are then used to decrypt the whole
+    ciphertext, repeating as appropriate for a repeating-key XOR.
+    """
+    b = _parse_data(data, encoding)
+    pt = _parse_data(plaintext, plaintext_encoding)
+
+    if offset < 0 or offset + len(pt) > len(b):
+        return BreakResult(
+            algorithm="XOR-known-plaintext",
+            plaintext="",
+            key=None,
+            confidence=0.0,
+        )
+
+    key_fragment = bytes(b[offset + i] ^ pt[i] for i in range(len(pt)))
+
+    # Decrypt using the recovered fragment, repeating it across the message.
+    decrypted = bytearray(b)
+    for i in range(len(b)):
+        rel = i - offset
+        if rel >= 0:
+            decrypted[i] ^= key_fragment[rel % len(key_fragment)]
+
+    txt = decrypted.decode(errors="ignore")
+    return BreakResult(
+        algorithm="XOR-known-plaintext",
+        plaintext=txt,
+        key=key_fragment.decode(errors="ignore"),
+        confidence=english_score(txt),
+    )

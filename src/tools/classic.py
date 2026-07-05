@@ -1,4 +1,4 @@
-from ..utils.scoring import english_score
+from ..utils.scoring import english_score, ioc
 from .models import BreakResult
 
 
@@ -25,39 +25,99 @@ def caesar_break(ciphertext: str) -> BreakResult:
     return best
 
 
+# English single-letter frequencies (a-z), used for Vigenère column analysis.
+_ENGLISH_FREQ = {
+    "a": 0.08167,
+    "b": 0.01492,
+    "c": 0.02782,
+    "d": 0.04253,
+    "e": 0.12702,
+    "f": 0.02228,
+    "g": 0.02015,
+    "h": 0.06094,
+    "i": 0.06966,
+    "j": 0.00153,
+    "k": 0.00772,
+    "l": 0.04025,
+    "m": 0.02406,
+    "n": 0.06749,
+    "o": 0.07507,
+    "p": 0.01929,
+    "q": 0.00095,
+    "r": 0.05987,
+    "s": 0.06327,
+    "t": 0.09056,
+    "u": 0.02758,
+    "v": 0.00978,
+    "w": 0.02360,
+    "x": 0.00150,
+    "y": 0.01974,
+    "z": 0.00074,
+}
+
+
+def _vigenere_decrypt(ciphertext: str, key: str) -> str:
+    out = []
+    ci = 0
+    for ch in ciphertext:
+        if ch.isalpha():
+            k = ord(key[ci % len(key)]) - 65
+            out.append(_shift_char(ch, k))
+            ci += 1
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _best_shift_frequency(column: str) -> int:
+    """Return the shift that makes the column's letter frequencies closest to English."""
+    best_shift = 0
+    best_score = -1.0
+    col_lower = column.lower()
+    n = len(col_lower)
+    if n == 0:
+        return 0
+    for shift in range(26):
+        score = 0.0
+        for ch in col_lower:
+            if "a" <= ch <= "z":
+                p = (ord(ch) - ord("a") - shift) % 26
+                score += _ENGLISH_FREQ[chr(p + ord("a"))]
+        if score > best_score:
+            best_score = score
+            best_shift = shift
+    return best_shift
+
+
 def vigenere_break(ciphertext: str, max_key_len: int = 16, top_k: int = 3) -> list[BreakResult]:
     text = ciphertext
+    alpha_text = _letters_only(text)
+
+    # Rank key lengths by average column IOC. English text has IOC ~0.067,
+    # while Vigenère columns with the wrong key length look closer to random (~0.038).
+    key_len_scores: list[tuple[int, float]] = []
+    for klen in range(2, min(max_key_len, len(alpha_text)) + 1):
+        cols = [alpha_text[i::klen] for i in range(klen)]
+        iocs = [ioc(c) for c in cols if len(c) > 1]
+        avg_ioc = sum(iocs) / len(iocs) if iocs else 0.0
+        key_len_scores.append((klen, avg_ioc))
+
+    # Try all key lengths, but prioritize those with higher IOC.
+    key_len_scores.sort(key=lambda x: x[1], reverse=True)
+
     cands: list[tuple[str, float, str]] = []
-    for klen in range(2, max_key_len + 1):
-        key = []
-        for i in range(klen):
-            column = []
-            for j, ch in enumerate(text):
-                if ch.isalpha():
-                    if j % klen == i:
-                        column.append(ch)
-            best_s = 0.0
-            best_k = 0
-            for k in range(26):
-                pt = "".join(_shift_char(c, k) for c in column)
-                s = english_score(pt)
-                if s > best_s:
-                    best_s = s
-                    best_k = k
-            key.append(chr(best_k + 65))
-        key_str = "".join(key)
-        out = []
-        ci = 0
-        for ch in text:
-            if ch.isalpha():
-                k = ord(key_str[ci % len(key_str)]) - 65
-                out.append(_shift_char(ch, k))
-                ci += 1
-            else:
-                out.append(ch)
-        pt = "".join(out)
+    seen_keys: set[str] = set()
+    for klen, _ in key_len_scores:
+        cols = [alpha_text[i::klen] for i in range(klen)]
+        key_chars = [chr(_best_shift_frequency(col) + 65) for col in cols]
+        key_str = "".join(key_chars)
+        if key_str in seen_keys:
+            continue
+        seen_keys.add(key_str)
+        pt = _vigenere_decrypt(text, key_str)
         sc = english_score(pt)
         cands.append((key_str, sc, pt))
+
     cands.sort(key=lambda x: x[1], reverse=True)
     return [
         BreakResult(algorithm="Vigenere", plaintext=pt, key=key, confidence=sc)

@@ -133,18 +133,20 @@ class TestIOC:
     """Tests for Index of Coincidence function."""
 
     def test_ioc_english_text(self):
-        """Test IOC of English text is in expected range."""
-        # English text typically has IOC around 0.067
-        text = "The quick brown fox jumps over the lazy dog"
+        """Test IOC of English-like text is higher than random."""
+        # A pangram has each letter once, giving a low IOC. Use text with
+        # natural letter/word repetition to obtain the characteristic English IOC (~0.067).
+        text = "the sun is shining and the sun is warm and the sun is bright today"
         result = ioc(text)
-        assert 0.05 < result < 0.08, f"Expected IOC ~0.067 for English, got {result}"
+        assert 0.05 < result < 0.08, f"Expected English-like IOC, got {result}"
 
     def test_ioc_random_text(self):
-        """Test IOC of random text is lower."""
-        # Random uniform distribution has IOC ~0.038
+        """Test IOC of random uniform text is low."""
+        # A string where every letter appears exactly once has IOC == 0, which is
+        # the lowest possible value for uniformly distributed text.
         text = "abcdefghijklmnopqrstuvwxyz"
         result = ioc(text)
-        assert 0.035 < result < 0.045, f"Expected IOC ~0.038 for random, got {result}"
+        assert 0.0 <= result < 0.02, f"Expected low IOC for uniform letters, got {result}"
 
     def test_ioc_empty_string(self):
         """Test IOC of empty string."""

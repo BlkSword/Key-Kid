@@ -5,6 +5,10 @@ from functools import lru_cache
 
 from .models import FactorResult
 
+# Safety limits: prevent malicious or accidental resource exhaustion.
+_MAX_FACTOR_BITS = 4096
+_MAX_POLLARD_RHO_ITERS = 100000
+
 
 def _mul(x: int, y: int, mod: int) -> int:
     return (x * y) % mod
@@ -52,21 +56,25 @@ def _gcd(a: int, b: int) -> int:
     return a
 
 
-def _pollards_rho(n: int) -> int:
+def _pollards_rho(n: int) -> int | None:
+    """Return a non-trivial factor of n, or None if no factor is found quickly."""
     if n % 2 == 0:
         return 2
-    while True:
+    for _restart in range(10):
         x = random.randrange(2, n - 1)
         y = x
         c = random.randrange(1, n - 1)
         d = 1
-        while d == 1:
+        iters = 0
+        while d == 1 and iters < _MAX_POLLARD_RHO_ITERS:
             x = (_mul(x, x, n) + c) % n
             y = (_mul(y, y, n) + c) % n
             y = (_mul(y, y, n) + c) % n
             d = _gcd(abs(x - y), n)
-        if d != n:
+            iters += 1
+        if 1 < d < n:
             return d
+    return None
 
 
 def _trial_division(n: int, limit: int = 100000) -> list[int]:
@@ -95,6 +103,10 @@ def _factor_recursive(n: int, out: list[int]) -> None:
         out.append(n)
         return
     d = _pollards_rho(n)
+    if d is None:
+        # Could not factor quickly; treat the remainder as a single factor.
+        out.append(n)
+        return
     _factor_recursive(d, out)
     _factor_recursive(n // d, out)
 
@@ -188,6 +200,19 @@ def factor_integer(
         nn = int(n, 0)
     else:
         nn = n
+
+    # 0 has no prime factorization; negatives factor like their absolute value.
+    if nn == 0:
+        return FactorResult(n="0", factors=[])
+    if nn < 0:
+        return FactorResult(n=str(nn), factors=["-1"] + [str(x) for x in _factor_internal(-nn)])
+
+    if nn.bit_length() > _MAX_FACTOR_BITS:
+        return FactorResult(
+            n=str(nn),
+            factors=[],
+        )
+
     if prefer_yafu:
         yf = _factor_with_yafu(nn, timeout)
         if yf:

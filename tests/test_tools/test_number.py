@@ -81,6 +81,13 @@ class TestFactorInteger:
         assert result.n == "10403"
         assert result.factors == ["101", "103"]
 
+    def test_factor_oversized_input(self):
+        """Test that overly large inputs are rejected gracefully."""
+        # 2**5000 is well beyond the safety limit.
+        result = factor_integer(2**5000, prefer_yafu=False)
+        assert result.n == str(2**5000)
+        assert result.factors == []
+
 
 class TestInternalHelpers:
     """Tests for internal helper functions (via public API)."""

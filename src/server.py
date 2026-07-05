@@ -1,5 +1,7 @@
 import os
 import sys
+from collections.abc import Callable
+from typing import Any
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import anyio as _anyio
@@ -34,11 +36,20 @@ from src.tools.classic import (  # noqa: E402
     vigenere_break,
 )
 from src.tools.decode import decode_common, detect_encoding  # noqa: E402
+from src.tools.ecc import ecc_add, ecc_discrete_log_brute, ecc_scalar_mult  # noqa: E402
 from src.tools.hash import hash_identify  # noqa: E402
 from src.tools.models import BreakResult, DetectionCandidate  # noqa: E402
 from src.tools.number import factor_integer  # noqa: E402
 from src.tools.rc4 import rc4_decrypt  # noqa: E402
 from src.tools.rot import rot_all  # noqa: E402
+from src.tools.rsa import (  # noqa: E402
+    common_modulus_attack,
+    fermat_factor,
+    hastad_broadcast_attack,
+    pollard_p1,
+    rsa_decrypt,
+    wiener_attack,
+)
 from src.tools.sagemath import (  # noqa: E402
     HAS_SAGEMATH,
     chinese_remainder,
@@ -47,10 +58,11 @@ from src.tools.sagemath import (  # noqa: E402
     elliptic_curve_factor,
     elliptic_curve_point_add,
     linear_congruence_system,
+    lll_reduce,
     quadratic_residue,
 )
 from src.tools.score import wordlist_score  # noqa: E402
-from src.tools.xor import xor_repeating_break, xor_single_break  # noqa: E402
+from src.tools.xor import xor_known_plaintext, xor_repeating_break, xor_single_break  # noqa: E402
 from src.utils.scoring import english_score  # noqa: E402
 
 mcp = FastMCP("CTF Crypto")
@@ -58,8 +70,17 @@ register_samples(mcp)
 register_prompts(mcp)
 register_wordlist(mcp)
 
+# Tool auto-registration: wrappers are decorated with @_register_tool and then
+# attached to the MCP instance in a single loop at the bottom of the file.
+_tool_registry: list[Callable[..., Any]] = []
 
-@mcp.tool()
+
+def _register_tool(fn: Callable[..., Any]) -> Callable[..., Any]:
+    _tool_registry.append(fn)
+    return fn
+
+
+@_register_tool
 def tool_rot_all(text: str, top_k: int = 3) -> list[BreakResult]:
     """Enumerate ROT(1..25) shifts and return top plaintext candidates ranked by English score.
 
@@ -71,7 +92,7 @@ def tool_rot_all(text: str, top_k: int = 3) -> list[BreakResult]:
     return rot_all(text, top_k)
 
 
-@mcp.tool()
+@_register_tool
 def tool_detect_encoding(text: str, top_k: int = 5) -> list[DetectionCandidate]:
     """Identify common encodings and attempt to decode, returning encoding guesses and decoded text.
 
@@ -83,7 +104,7 @@ def tool_detect_encoding(text: str, top_k: int = 5) -> list[DetectionCandidate]:
     return detect_encoding(text, top_k)
 
 
-@mcp.tool()
+@_register_tool
 def tool_decode_common(text: str, limit: int = 10) -> list[DetectionCandidate]:
     """Batch-try common decoders on the input and quickly produce multiple candidate decodings.
 
@@ -95,7 +116,7 @@ def tool_decode_common(text: str, limit: int = 10) -> list[DetectionCandidate]:
     return decode_common(text, limit)
 
 
-@mcp.tool()
+@_register_tool
 def tool_xor_single_break(data: str, encoding: str = "hex", top_k: int = 3) -> list[BreakResult]:
     """Brute-force single-byte XOR ciphertext and return likely plaintexts and the key byte.
 
@@ -107,7 +128,7 @@ def tool_xor_single_break(data: str, encoding: str = "hex", top_k: int = 3) -> l
     return xor_single_break(data, encoding, top_k)
 
 
-@mcp.tool()
+@_register_tool
 def tool_xor_repeating_break(
     data: str, encoding: str = "hex", min_key: int = 2, max_key: int = 40
 ) -> BreakResult:
@@ -121,7 +142,7 @@ def tool_xor_repeating_break(
     return xor_repeating_break(data, encoding, min_key, max_key)
 
 
-@mcp.tool()
+@_register_tool
 def tool_caesar_break(ciphertext: str) -> BreakResult:
     """Brute-force Caesar cipher and return the highest-scoring plaintext and shift.
 
@@ -133,7 +154,7 @@ def tool_caesar_break(ciphertext: str) -> BreakResult:
     return caesar_break(ciphertext)
 
 
-@mcp.tool()
+@_register_tool
 def tool_vigenere_break(
     ciphertext: str, max_key_len: int = 16, top_k: int = 3
 ) -> list[BreakResult]:
@@ -147,7 +168,7 @@ def tool_vigenere_break(
     return vigenere_break(ciphertext, max_key_len, top_k)
 
 
-@mcp.tool()
+@_register_tool
 def tool_affine_break(ciphertext: str, top_k: int = 3) -> list[BreakResult]:
     """Break affine cipher: enumerate parameters (a,b) and return top candidates by English score.
 
@@ -159,7 +180,7 @@ def tool_affine_break(ciphertext: str, top_k: int = 3) -> list[BreakResult]:
     return affine_break(ciphertext, top_k)
 
 
-@mcp.tool()
+@_register_tool
 def tool_rail_fence_break(
     ciphertext: str, max_rails: int = 10, top_k: int = 3
 ) -> list[BreakResult]:
@@ -173,7 +194,7 @@ def tool_rail_fence_break(
     return rail_fence_break(ciphertext, max_rails, top_k)
 
 
-@mcp.tool()
+@_register_tool
 def tool_transposition_break(
     ciphertext: str, max_key_len: int = 5, top_k: int = 3
 ) -> list[BreakResult]:
@@ -187,7 +208,7 @@ def tool_transposition_break(
     return transposition_break(ciphertext, max_key_len, top_k)
 
 
-@mcp.tool()
+@_register_tool
 def tool_playfair_break(
     ciphertext: str, key_hint: str | None = None, top_k: int = 1
 ) -> list[BreakResult]:
@@ -201,7 +222,7 @@ def tool_playfair_break(
     return playfair_break(ciphertext, key_hint, top_k)
 
 
-@mcp.tool()
+@_register_tool
 async def tool_rc4_decrypt(
     ciphertext: str,
     cipher_encoding: str = "hex",
@@ -220,7 +241,7 @@ async def tool_rc4_decrypt(
     return await rc4_decrypt(ciphertext, cipher_encoding, key, key_encoding, ctx)
 
 
-@mcp.tool()
+@_register_tool
 async def tool_factor_integer(
     n: str,
     prefer_yafu: bool = True,
@@ -248,7 +269,7 @@ async def tool_factor_integer(
     return {"n": r.n, "factors": r.factors}
 
 
-@mcp.tool()
+@_register_tool
 def tool_hash_identify(text: str) -> list[str]:
     """Heuristically identify possible hash/encoding types by length and character set.
 
@@ -260,7 +281,7 @@ def tool_hash_identify(text: str) -> list[str]:
     return hash_identify(text)
 
 
-@mcp.tool()
+@_register_tool
 async def tool_aes_decrypt(
     ciphertext: str,
     cipher_encoding: str = "hex",
@@ -284,7 +305,7 @@ async def tool_aes_decrypt(
     )
 
 
-@mcp.tool()
+@_register_tool
 async def tool_des_decrypt(
     ciphertext: str,
     cipher_encoding: str = "hex",
@@ -307,7 +328,143 @@ async def tool_des_decrypt(
     )
 
 
-@mcp.tool()
+@_register_tool
+def tool_rsa_wiener_attack(n: str, e: str) -> dict:
+    """Wiener's attack: recover small RSA private exponent d and factor n.
+
+    Purpose: Crack RSA when the private exponent is unusually small (d < n^0.25/3).
+    Usage: `n` (modulus), `e` (public exponent), both as decimal or `0x...` strings.
+    Returns: Dict with `success`, `p`, `q`, `d`, and `error` if not vulnerable.
+    Related: After recovering d, use `tool_rsa_decrypt` to decrypt ciphertexts.
+    """
+    return wiener_attack(n, e)
+
+
+@_register_tool
+def tool_rsa_common_modulus_attack(c1: str, c2: str, e1: str, e2: str, n: str) -> dict:
+    """Common modulus attack: same RSA modulus n, two coprime public exponents e1/e2.
+
+    Purpose: Recover plaintext when the same message is encrypted under different public exponents with the same modulus.
+    Usage: `c1`, `c2` (ciphertexts), `e1`, `e2` (public exponents), `n` (modulus).
+    Returns: Dict with `success` and `plaintext` (hex bytes).
+    Related: Requires gcd(e1, e2) == 1; otherwise the attack does not apply.
+    """
+    return common_modulus_attack(c1, c2, e1, e2, n)
+
+
+@_register_tool
+def tool_rsa_hastad_broadcast_attack(
+    ciphertexts: list[str], moduli: list[str], exponent: int
+) -> dict:
+    """Hastad's broadcast attack: small public exponent e, e distinct coprime moduli.
+
+    Purpose: Recover plaintext when the same small message is broadcast encrypted with e=3 (or other small e).
+    Usage: `ciphertexts` and `moduli` are parallel lists of length at least `exponent`.
+    Returns: Dict with `success` and `plaintext` (hex bytes).
+    Related: The message must be smaller than each modulus; padding usually defeats this attack.
+    """
+    return hastad_broadcast_attack(ciphertexts, moduli, exponent)
+
+
+@_register_tool
+def tool_rsa_fermat_factor(n: str, max_iters: int = 100000) -> dict:
+    """Fermat's factorization for RSA moduli where the two primes are close together.
+
+    Purpose: Factor n = p*q when |p - q| is small.
+    Usage: `n` (modulus); optional `max_iters` limits the square-search iterations.
+    Returns: Dict with `success`, `p`, `q`, and `error` if not converged.
+    Related: Often effective against weakly generated RSA keys; combine with `tool_factor_integer`.
+    """
+    return fermat_factor(n, max_iters)
+
+
+@_register_tool
+def tool_rsa_pollard_p1(n: str, smoothness_bound: int = 100000) -> dict:
+    """Pollard p-1 factorization for moduli with a smooth (p-1) subgroup.
+
+    Purpose: Find factors when one prime p has only small factors in p-1.
+    Usage: `n` (modulus); `smoothness_bound` controls the smoothness search bound.
+    Returns: Dict with `success`, `factor`, `cofactor`, and `error` if none found.
+    Related: Increase `smoothness_bound` for larger smooth subgroups; may be slow for large bounds.
+    """
+    return pollard_p1(n, smoothness_bound)
+
+
+@_register_tool
+def tool_rsa_decrypt(ciphertext: str, n: str, d: str) -> dict:
+    """Raw RSA decryption: m = c^d mod n, returning the plaintext as hex bytes.
+
+    Purpose: Decrypt once the private exponent or a valid equivalent is known.
+    Usage: `ciphertext`, `n` (modulus), `d` (private exponent), all as decimal or `0x...` strings.
+    Returns: Dict with `success` and `plaintext` (hex bytes).
+    Related: Use after `tool_rsa_wiener_attack` or other key-recovery attacks.
+    """
+    return rsa_decrypt(ciphertext, n, d)
+
+
+@_register_tool
+def tool_xor_known_plaintext(
+    data: str,
+    plaintext: str,
+    encoding: str = "hex",
+    plaintext_encoding: str = "raw",
+    offset: int = 0,
+) -> BreakResult:
+    """Known-plaintext attack against repeating-key XOR.
+
+    Purpose: Recover part or all of an XOR key when a contiguous plaintext fragment is known.
+    Usage: `data` (ciphertext), `plaintext` (known fragment), `encoding`/`plaintext_encoding`,
+           and `offset` where the fragment begins in the ciphertext.
+    Returns: `BreakResult` with recovered key fragment and full decrypted plaintext attempt.
+    Related: Use after confirming the cipher is XOR; pair with `tool_xor_repeating_break` for unknown plaintext.
+    """
+    return xor_known_plaintext(data, plaintext, encoding, plaintext_encoding, offset)
+
+
+@_register_tool
+def tool_ecc_add(a: str, b: str, p: str, p1: tuple[str, str], p2: tuple[str, str]) -> dict:
+    """Add two points on a short Weierstrass curve y² ≡ x³ + ax + b (mod p).
+
+    Purpose: Perform elliptic-curve arithmetic without requiring SageMath.
+    Usage: Curve parameters `a`, `b`, `p`; points as (x, y) tuples or ("inf", "inf") for identity.
+    Returns: Dict with `success`, `x`, `y`, and `error` if any.
+    Related: Use with `tool_ecc_scalar_mult` and `tool_ecc_discrete_log_brute` for ECC challenges.
+    """
+    return ecc_add(a, b, p, p1, p2)
+
+
+@_register_tool
+def tool_ecc_scalar_mult(a: str, b: str, p: str, point: tuple[str, str], k: str) -> dict:
+    """Scalar multiplication k*P on a short Weierstrass curve over a prime field.
+
+    Purpose: Compute multiples of an elliptic-curve point efficiently.
+    Usage: Curve parameters `a`, `b`, `p`; base point `point`; scalar `k`.
+    Returns: Dict with resulting point coordinates.
+    Related: Useful for ECDSA/ECC CTF tasks; combine with `tool_ecc_add`.
+    """
+    return ecc_scalar_mult(a, b, p, point, k)
+
+
+@_register_tool
+def tool_ecc_discrete_log_brute(
+    a: str,
+    b: str,
+    p: str,
+    base: tuple[str, str],
+    target: tuple[str, str],
+    max_steps: int = 100000,
+) -> dict:
+    """Brute-force elliptic-curve discrete log for small-order points.
+
+    Purpose: Find k such that k*base == target on the given curve.
+    Usage: Curve parameters `a`, `b`, `p`; base and target points; optional `max_steps`.
+    Returns: Dict with `success`, `k`, and `error` if not found.
+    Related: Only feasible for small orders; for large orders use SageMath-based tools.
+    """
+    return ecc_discrete_log_brute(a, b, p, base, target, max_steps)
+
+
+@_register_tool
 async def tool_rot_all_wordlist(
     text: str,
     top_k: int = 3,
@@ -349,7 +506,7 @@ async def tool_rot_all_wordlist(
 
 
 # SageMath Tools
-@mcp.tool()
+@_register_tool
 def tool_discrete_log(
     g: str, p: str, base: str | None = None, method: str = "auto", timeout: int = 60
 ) -> dict:
@@ -363,7 +520,7 @@ def tool_discrete_log(
     return discrete_log(g, p, base, method, timeout)
 
 
-@mcp.tool()
+@_register_tool
 def tool_elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120) -> dict:
     """Factor integer using Lenstra's Elliptic Curve Method (ECM) via SageMath.
 
@@ -375,7 +532,7 @@ def tool_elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int 
     return elliptic_curve_factor(n, a, b, timeout)
 
 
-@mcp.tool()
+@_register_tool
 def tool_chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> dict:
     """Solve system of linear congruences using Chinese Remainder Theorem via SageMath.
 
@@ -387,7 +544,7 @@ def tool_chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30
     return chinese_remainder(congruences, timeout)
 
 
-@mcp.tool()
+@_register_tool
 def tool_linear_congruence(
     coefficients: list[str], remainders: list[str], moduli: list[str], timeout: int = 30
 ) -> dict:
@@ -401,7 +558,7 @@ def tool_linear_congruence(
     return linear_congruence_system(coefficients, remainders, moduli, timeout)
 
 
-@mcp.tool()
+@_register_tool
 def tool_elliptic_curve_point_add(
     curve_params: tuple[str, str, str],
     p: str,
@@ -419,7 +576,7 @@ def tool_elliptic_curve_point_add(
     return elliptic_curve_point_add(curve_params, p, p1, p2, timeout)
 
 
-@mcp.tool()
+@_register_tool
 def tool_coppersmith_attack(
     n: str, e: str, polynomial: str, beta: float = 0.5, timeout: int = 120
 ) -> dict:
@@ -433,7 +590,7 @@ def tool_coppersmith_attack(
     return coppersmith_attack(n, e, polynomial, beta, timeout)
 
 
-@mcp.tool()
+@_register_tool
 def tool_quadratic_residue(a: str, p: str, timeout: int = 30) -> dict:
     """Find square roots of a modulo prime p: solve x² ≡ a (mod p) using SageMath.
 
@@ -445,7 +602,19 @@ def tool_quadratic_residue(a: str, p: str, timeout: int = 30) -> dict:
     return quadratic_residue(a, p, timeout)
 
 
-@mcp.tool()
+@_register_tool
+def tool_lll_reduce(basis: list[list[str]], timeout: int = 30) -> dict:
+    """Run LLL lattice reduction on an integer basis matrix via SageMath.
+
+    Purpose: Find a short, nearly orthogonal basis for a lattice; useful in CTF lattice/crypto challenges.
+    Usage: `basis` is a list of rows, each row a list of integer strings; optional `timeout`.
+    Returns: Dict with `success`, `reduced_basis` (rows as strings), and `error` if failed.
+    Related: Common step in knapsack/LCG attacks and RSA small-root variants.
+    """
+    return lll_reduce(basis, timeout)
+
+
+@_register_tool
 def tool_sagemath_check() -> dict:
     """Check if SageMath is available and show version info.
 
@@ -471,6 +640,11 @@ def tool_sagemath_check() -> dict:
                 "macos": "brew install sage (Homebrew) or download .dmg from website",
             },
         }
+
+
+# Apply all collected tool wrappers to the MCP instance.
+for _registered_fn in _tool_registry:
+    mcp.tool()(_registered_fn)
 
 
 def main():

@@ -220,3 +220,4 @@ session.log
 .pre-commit-config.yaml.bak
 
 .claude
+AGENTS.md

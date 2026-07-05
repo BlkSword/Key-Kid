@@ -7,13 +7,28 @@ SageMath is a free open-source mathematics software system based on Python.
 Install from: https://www.sagemath.org/
 """
 
+import re
 import shutil
 import subprocess
+from collections.abc import Sequence
 from typing import Any
 
 # Check if SageMath is available
 _SAGE_BINARY = shutil.which("sage") or shutil.which("sage.exe") or shutil.which("sagemath")
 HAS_SAGEMATH = _SAGE_BINARY is not None
+
+# Safety limits to prevent malicious or accidental resource exhaustion.
+_MAX_SAGE_BITS = 8192
+_MAX_SAGE_POLYNOMIAL_LEN = 500
+
+# Polynomials passed to Coppersmith must be simple univariate expressions in x.
+_SAFE_POLY_PATTERN = re.compile(r"^[\d\s\+\-\*\^\(\)xX\.]+$")
+
+
+def _check_size(value: int, name: str) -> str | None:
+    if value.bit_length() > _MAX_SAGE_BITS:
+        return f"{name} exceeds maximum supported size ({_MAX_SAGE_BITS} bits)"
+    return None
 
 
 def _run_sage(code: str, timeout: int = 30) -> str | None:
@@ -90,6 +105,15 @@ def discrete_log(
             "method": method,
             "error": "Invalid number format (use decimal or 0x... for hex)",
         }
+
+    for val, name in ((g_val, "g"), (p_val, "p")):
+        err = _check_size(val, name)
+        if err:
+            return {"found": False, "x": None, "method": method, "error": err}
+    if base_val is not None:
+        err = _check_size(base_val, "base")
+        if err:
+            return {"found": False, "x": None, "method": method, "error": err}
 
     # Build SageMath code
     if base_val is None:
@@ -190,6 +214,10 @@ def elliptic_curve_factor(n: str, a: str = "0", b: str = "0", timeout: int = 120
     except ValueError:
         return {"found": False, "factor": None, "error": "Invalid number format"}
 
+    err = _check_size(n_val, "n")
+    if err:
+        return {"found": False, "factor": None, "error": err}
+
     sage_code = f"""
 n = {n_val}
 try:
@@ -263,7 +291,6 @@ def chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> 
         try:
             rem_val = int(rem, 0)
             mod_val = int(mod, 0)
-            cong_list.append((rem_val, mod_val))
         except ValueError:
             return {
                 "found": False,
@@ -271,6 +298,11 @@ def chinese_remainder(congruences: list[tuple[str, str]], timeout: int = 30) -> 
                 "modulus": None,
                 "error": f"Invalid number format: {rem}, {mod}",
             }
+        for val, name in ((rem_val, "remainder"), (mod_val, "modulus")):
+            err = _check_size(val, name)
+            if err:
+                return {"found": False, "x": None, "modulus": None, "error": err}
+        cong_list.append((rem_val, mod_val))
 
     sage_code = f"""
 congruences = {cong_list}
@@ -336,6 +368,12 @@ def linear_congruence_system(
     except ValueError:
         return {"found": False, "error": "Invalid number format"}
 
+    for group, name in ((coeffs, "coefficient"), (rems, "remainder"), (mods, "modulus")):
+        for val in group:
+            err = _check_size(val, name)
+            if err:
+                return {"found": False, "error": err}
+
     sage_code = f"""
 import time
 coeffs = {coeffs}
@@ -382,13 +420,13 @@ except Exception as e:
 
     for line in output.splitlines():
         if line.startswith("X:"):
-            val = line.split(":", 1)[1].strip()
-            if val == "ANY":
+            raw = line.split(":", 1)[1].strip()
+            if raw == "ANY":
                 result["found"] = True
                 result["x"] = "any"
             else:
                 result["found"] = True
-                result["x"] = val
+                result["x"] = raw
         elif line.startswith("MODULUS:"):
             result["modulus"] = line.split(":", 1)[1].strip()
         elif line.startswith("ERROR:"):
@@ -430,6 +468,19 @@ def elliptic_curve_point_add(
         y2_val = int(p2[1], 0)
     except ValueError:
         return {"found": False, "x": None, "y": None, "error": "Invalid number format"}
+
+    for val, name in (
+        (a_val, "a"),
+        (b_val, "b"),
+        (p_val, "p"),
+        (x1_val, "x1"),
+        (y1_val, "y1"),
+        (x2_val, "x2"),
+        (y2_val, "y2"),
+    ):
+        err = _check_size(val, name)
+        if err:
+            return {"found": False, "x": None, "y": None, "error": err}
 
     sage_code = f"""
 p = {p_val}
@@ -492,6 +543,24 @@ def coppersmith_attack(
         e_val = int(e, 0)
     except ValueError:
         return {"found": False, "roots": [], "error": "Invalid number format"}
+
+    if len(polynomial) > _MAX_SAGE_POLYNOMIAL_LEN:
+        return {
+            "found": False,
+            "roots": [],
+            "error": f"Polynomial exceeds maximum length of {_MAX_SAGE_POLYNOMIAL_LEN}",
+        }
+    if not _SAFE_POLY_PATTERN.match(polynomial):
+        return {
+            "found": False,
+            "roots": [],
+            "error": "Polynomial contains disallowed characters (only digits, x, +, -, *, ^, (, ), . and spaces are permitted)",
+        }
+
+    for val, name in ((n_val, "n"), (e_val, "e")):
+        err = _check_size(val, name)
+        if err:
+            return {"found": False, "roots": [], "error": err}
 
     sage_code = f"""
 n = {n_val}
@@ -564,6 +633,11 @@ def quadratic_residue(a: str, p: str, timeout: int = 30) -> dict[str, Any]:
     except ValueError:
         return {"found": False, "roots": [], "error": "Invalid number format"}
 
+    for val, name in ((a_val, "a"), (p_val, "p")):
+        err = _check_size(val, name)
+        if err:
+            return {"found": False, "roots": [], "error": err}
+
     sage_code = f"""
 a = {a_val}
 p = {p_val}
@@ -602,3 +676,83 @@ except Exception as e:
             result["error"] = line.split(":", 1)[1].strip()
 
     return result
+
+
+def lll_reduce(basis: Sequence[Sequence[int | str]], timeout: int = 30) -> dict[str, Any]:
+    """Run LLL lattice reduction on an integer basis matrix.
+
+    Args:
+        basis: Matrix rows as lists of integer strings/values.
+        timeout: Timeout in seconds.
+
+    Returns:
+        Dict with `success`, `reduced_basis` (list of rows as strings), and `error`.
+    """
+    if not HAS_SAGEMATH:
+        return {
+            "success": False,
+            "reduced_basis": [],
+            "error": "SageMath not installed",
+        }
+
+    try:
+        parsed = [[int(x, 0) if isinstance(x, str) else int(x) for x in row] for row in basis]
+    except ValueError:
+        return {
+            "success": False,
+            "reduced_basis": [],
+            "error": "Invalid number format in basis",
+        }
+
+    if not parsed or any(len(row) != len(parsed[0]) for row in parsed):
+        return {
+            "success": False,
+            "reduced_basis": [],
+            "error": "Basis must be a non-empty rectangular matrix",
+        }
+
+    for row in parsed:
+        for val in row:
+            err = _check_size(val, "basis entry")
+            if err:
+                return {"success": False, "reduced_basis": [], "error": err}
+
+    sage_code = f"""
+basis = {parsed}
+try:
+    from sage.all import Matrix, ZZ
+    M = Matrix(ZZ, basis)
+    R = M.LLL()
+    print("ROWS:")
+    for row in R.rows():
+        print(list(row))
+except Exception as e:
+    print(f"ERROR: {{str(e)}}")
+"""
+
+    output = _run_sage(sage_code, timeout)
+    if output is None:
+        return {"success": False, "reduced_basis": [], "error": "SageMath execution failed"}
+
+    rows: list[list[str]] = []
+    error: str | None = None
+    in_rows = False
+    for line in output.splitlines():
+        if line.startswith("ROWS:"):
+            in_rows = True
+            continue
+        if line.startswith("ERROR:"):
+            error = line.split(":", 1)[1].strip()
+            in_rows = False
+            continue
+        if in_rows:
+            try:
+                row = eval(line.strip())
+                if isinstance(row, list):
+                    rows.append([str(x) for x in row])
+            except Exception:
+                pass
+
+    if error:
+        return {"success": False, "reduced_basis": [], "error": error}
+    return {"success": True, "reduced_basis": rows, "error": None}

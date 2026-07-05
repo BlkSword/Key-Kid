@@ -113,12 +113,12 @@ def english_score(s: str) -> float:
     if n > 0 and (alpha_count / n) < 0.5:
         return 0.0
 
-    # Normalize letter score (max approx 1.0 for perfect distribution)
+    # Normalize letter score (max approx 1.0 for a very English-like distribution)
     avg_letter_score = letter_score / n if n > 0 else 0
     # Expected avg for random garbage is 1/26 ≈ 0.038 (ignoring space).
-    # Expected avg for English is ≈ 0.065.
-    # Scale: (val - 0.038) / (0.069 - 0.038)
-    normalized_letter = (avg_letter_score - 0.038) / 0.031
+    # Expected avg for English is ≈ 0.065; a dense English sentence can reach ~0.085.
+    # Scale: (val - 0.038) / (0.085 - 0.038)
+    normalized_letter = (avg_letter_score - 0.038) / (0.085 - 0.038)
     normalized_letter = max(0.0, min(1.0, normalized_letter))
 
     # 3. Bigram score - more balanced approach
@@ -130,18 +130,21 @@ def english_score(s: str) -> float:
             if bg in BIGRAM_FREQ:
                 bigram_score += BIGRAM_FREQ[bg]
                 bigram_count += 1
-        # Normalize: average score per bigram, capped at reasonable max
+        # Normalize: average score per bigram, capped at a reasonable max
         if bigram_count > 0:
             avg_bigram = bigram_score / bigram_count
             # Scale bigrams: expected max avg is ~0.005, cap at 0.05
-            # This prevents bigram score from dominating
-            bigram_score = min(0.05, avg_bigram) / 0.005
+            # This prevents bigram score from dominating; keep final in [0, 1].
+            bigram_score = min(1.0, min(0.05, avg_bigram) / 0.005)
         else:
             bigram_score = 0.0
 
-    # Combine scores: 70% letter freq, 30% bigram
-    total = normalized_letter * 0.7 + bigram_score * 0.3
+    # Combine scores: 60% letter freq, 40% bigram
+    # Bigrams add discrimination for short, pangram-like texts where letter
+    # frequency alone looks average even though the text is valid English.
+    total = normalized_letter * 0.6 + bigram_score * 0.4
 
+    # Both components are already capped in [0, 1]; this min is a safety net.
     return min(1.0, total)
 
 
@@ -160,5 +163,7 @@ def ioc(s: str) -> float:
 
 
 def hamming_distance(a: bytes, b: bytes) -> int:
-    x = bytes(x ^ y for x, y in zip(a, b, strict=True))
+    # Compare up to the shorter length, matching the test expectation and the
+    # common "truncated Hamming distance" definition used in crypto exercises.
+    x = bytes(x ^ y for x, y in zip(a, b, strict=False))
     return sum(bin(byte).count("1") for byte in x)

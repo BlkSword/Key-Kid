@@ -1,0 +1,25 @@
+# SageMath-enabled Key-Kid image.
+# Significantly larger than the standard image; use only when advanced math
+# tools (discrete log, ECM, Coppersmith, etc.) are required.
+FROM sagemath/sagemath:10.4
+
+USER root
+WORKDIR /app
+
+# Install Python dependencies using the system pip that ships with SageMath.
+COPY requirements.txt .
+RUN sage --pip install --no-cache-dir -r requirements.txt
+
+# Install the package with dev extras.
+COPY pyproject.toml .
+COPY src ./src
+COPY tests ./tests
+COPY scripts ./scripts
+RUN sage --pip install --no-cache-dir -e ".[dev]"
+
+ENV MCP_TRANSPORT=stdio
+ENV PYTHONPATH=/app
+
+EXPOSE 8000
+
+CMD ["sage", "--python", "src/server.py"]

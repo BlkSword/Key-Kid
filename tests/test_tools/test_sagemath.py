@@ -10,6 +10,7 @@ from src.tools.sagemath import (
     elliptic_curve_factor,
     elliptic_curve_point_add,
     linear_congruence_system,
+    lll_reduce,
     quadratic_residue,
 )
 
@@ -237,3 +238,30 @@ class TestSageMathAvailability:
         result = chinese_remainder([("2", "3"), ("3", "5")])
         assert result["found"] is False
         assert "SageMath not installed" in result.get("error", "")
+
+        result = lll_reduce([["1", "0"], ["0", "1"]])
+        assert result["success"] is False
+        assert "SageMath not installed" in result.get("error", "")
+
+
+@pytest.mark.skipif(not HAS_SAGEMATH, reason="SageMath not installed")
+class TestLLLReduce:
+    """Tests for LLL lattice reduction."""
+
+    def test_lll_identity(self):
+        """Test LLL on an already-reduced basis."""
+        result = lll_reduce([["1", "0"], ["0", "1"]])
+        assert result["success"] is True
+        assert result["reduced_basis"] == [["1", "0"], ["0", "1"]]
+
+    def test_lll_invalid_basis(self):
+        """Test LLL with inconsistent row lengths."""
+        result = lll_reduce([["1", "0"], ["0"]])
+        assert result["success"] is False
+        assert "rectangular" in result.get("error", "").lower()
+
+    def test_lll_invalid_number(self):
+        """Test LLL with non-integer input."""
+        result = lll_reduce([["abc"]])
+        assert result["success"] is False
+        assert "Invalid" in result.get("error", "")

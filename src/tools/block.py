@@ -17,12 +17,26 @@ except Exception:
     HAS_CRYPTOGRAPHY = False
 
 
+# Safety limits to prevent accidental or malicious resource exhaustion.
+_MAX_CT_BYTES = 1 * 1024 * 1024  # 1 MiB
+_MAX_KEY_BYTES = 64
+_MAX_IV_BYTES = 32
+
+
 def _parse(data: str, enc: str) -> bytes:
     if enc == "hex":
         return bytes.fromhex(data)
     if enc == "b64":
         return base64.b64decode(data)
     return data.encode()
+
+
+def _parse_limited(data: str, enc: str, max_bytes: int, name: str) -> bytes:
+    """Parse input and reject unreasonably large payloads."""
+    parsed = _parse(data, enc)
+    if len(parsed) > max_bytes:
+        raise ValueError(f"{name} exceeds maximum allowed size of {max_bytes} bytes")
+    return parsed
 
 
 def _pkcs7_unpad(b: bytes) -> bytes:
@@ -105,7 +119,7 @@ async def aes_decrypt(
     mode: str = "CBC",
     ctx: object | None = None,
 ) -> str:
-    ct = _parse(ciphertext, cipher_encoding)
+    ct = _parse_limited(ciphertext, cipher_encoding, _MAX_CT_BYTES, "ciphertext")
     if key is None:
         if ctx is not None and hasattr(ctx, "elicit"):
             from pydantic import BaseModel
@@ -128,8 +142,8 @@ async def aes_decrypt(
                 return ""
         else:
             return ""
-    k = _parse(key, key_encoding)
-    ivb = _parse(iv, iv_encoding) if iv else None
+    k = _parse_limited(key, key_encoding, _MAX_KEY_BYTES, "key")
+    ivb = _parse_limited(iv, iv_encoding, _MAX_IV_BYTES, "iv") if iv else None
     if HAS_PYCRYPTO:
         pt = _aes_pycrypto(ct, k, ivb, mode)
     elif HAS_CRYPTOGRAPHY:
@@ -149,7 +163,7 @@ async def des_decrypt(
     mode: str = "CBC",
     ctx: object | None = None,
 ) -> str:
-    ct = _parse(ciphertext, cipher_encoding)
+    ct = _parse_limited(ciphertext, cipher_encoding, _MAX_CT_BYTES, "ciphertext")
     if key is None:
         if ctx is not None and hasattr(ctx, "elicit"):
             from pydantic import BaseModel
@@ -172,8 +186,8 @@ async def des_decrypt(
                 return ""
         else:
             return ""
-    k = _parse(key, key_encoding)
-    ivb = _parse(iv, iv_encoding) if iv else None
+    k = _parse_limited(key, key_encoding, _MAX_KEY_BYTES, "key")
+    ivb = _parse_limited(iv, iv_encoding, _MAX_IV_BYTES, "iv") if iv else None
     if HAS_PYCRYPTO:
         pt = _des_pycrypto(ct, k, ivb, mode)
     elif HAS_CRYPTOGRAPHY:
